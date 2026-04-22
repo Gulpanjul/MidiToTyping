@@ -33,7 +33,7 @@ main()
   └─> keyboard.on_press_key()   — daftarkan hotkeys global (DELETE/HOME/END/INSERT)
   └─> show_splash()             — tampilkan splash screen Tkinter ~2 detik
   └─> [loop] process_file()     — GUI picker (Tkinter mainloop)
-        └─> scan_folders()      — os.walk rekursif cari .mid/.midi
+        └─> _scan_flat()        — os.listdir non-rekursif cari .mid/.midi di folder aktif
         └─> user pilih file
         └─> return filepath
   └─> parse_song_file(filepath) — mido baca MIDI → tulis ~temp_midi_convert.txt → parse → list notes
@@ -204,12 +204,10 @@ Konfigurasi PyInstaller: bundle `mido` (semua submodule via `collect_submodules`
 
 | Risiko | Detail |
 |---|---|
-| **File temp tidak dihapus** | `~temp_midi_convert.txt` dibuat tiap kali parsing MIDI tetapi tidak pernah dihapus secara eksplisit. Bisa menumpuk jika banyak file diputar. |
 | **Global state tanpa lock** | `stored_index`, `is_playing`, `_play_gen` diakses dari GUI thread dan daemon thread tanpa `threading.Lock`. `_play_gen` increment berfungsi sebagai guard tetapi bukan atomic di CPython tanpa GIL (Python 3.13+). |
 | **Akurasi timer Windows** | `threading.Timer` di Windows memiliki jitter ~10–15ms. Tidak ada kompensasi drift — delay bisa akumulasi pada lagu panjang. |
 | **process_file() terlalu panjang** | Fungsi `process_file()` (~700 baris) berisi semua logika GUI termasuk nested function definitions. Sulit di-trace tanpa membaca keseluruhan. |
-| **`scan_folders()` tidak terlihat di grep** | Fungsi `scan_folders` kemungkinan adalah nested function di dalam `process_file()` — tidak muncul di grep `^def`. Perlu baca blok 437–1145 untuk menemukannya. |
-| **`.env` bukan env vars sebenarnya** | File `.env` hanya berisi `/docs` (kemungkinan gitignore pointer), bukan konfigurasi environment variable. |
+| **`_scan_flat()` non-rekursif** | Fungsi `_scan_flat()` hanya scan satu level folder (non-rekursif). Navigasi ke subfolder dilakukan via folder pane, bukan scan otomatis. |
 | **Tidak ada logging ke file** | Semua output via `print()` ke stdout. Tidak ada log file — debug di exe (console=False) tidak bisa dilakukan tanpa rebuild. |
 | **`folder_history` tidak dibersihkan** | Folder yang sudah dihapus dari disk tetap tersimpan di config dan bisa muncul kembali saat reload. |
 

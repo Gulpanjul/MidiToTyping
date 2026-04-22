@@ -151,7 +151,6 @@ import playSong_clean  # safe import
 - **~10-15ms timer jitter** — akurasi `threading.Timer` di Windows
 - **61-tuts limit** — note di luar range C2–C7 di-fold, bukan dipotong
 - **Multi-channel flatten** — semua track MIDI digabung; instrumen non-piano ikut terpetakan
-- **Lang/Theme tidak persist** — reset ke default (`id`, `dark`) setiap kali app dibuka ulang
 - **Slow .exe startup (PyInstaller)** — single-file bundle mengekstrak ke temp setiap run (~3-5 detik normal); Nuitka jauh lebih cepat
 - **Nuitka butuh Python 3.12** — `--mingw64` tidak support Python 3.13+; gunakan `uv tool install nuitka --python 3.12 ...`
 - **console=False di spec** — exe tidak munculkan CMD window; jika butuh debug ganti ke `True`

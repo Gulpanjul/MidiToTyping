@@ -281,6 +281,7 @@ def release_letter(letter: str) -> None:
 # Parser file MIDI / lagu teks
 # ──────────────────────────────────────────────────────────
 def parse_song_file(filepath: str) -> tuple:
+    _temp_file: str | None = None
     if filepath.lower().endswith(('.mid', '.midi')):
         try:
             import mido
@@ -350,7 +351,8 @@ def parse_song_file(filepath: str) -> tuple:
             for ln in lines:
                 f.write(ln + '\n')
 
-        filepath = txt_path
+        filepath    = txt_path
+        _temp_file  = txt_path
 
     notes: list = []
     with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
@@ -367,6 +369,11 @@ def parse_song_file(filepath: str) -> tuple:
                 notes.append([timestamp, keys])
             except ValueError:
                 continue
+    if _temp_file:
+        try:
+            os.remove(_temp_file)
+        except OSError:
+            pass
     return (1.0, None, [[0.0, 'header']] + notes)
 
 
