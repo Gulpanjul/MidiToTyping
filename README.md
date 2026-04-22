@@ -1,104 +1,170 @@
-<!--
-============================================================
-File: README.md
-Date: 2026-04-13
-Author: playSong maintainer
-Task: Dokumentasi penggunaan, build, dan format file lagu
-AI-Assisted: Yes — Claude Code (Opus 4.6)
-============================================================
--->
+<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+<a id="readme-top"></a>
 
-# 🎵 playSong — Song Auto-Player
+<!-- PROJECT SHIELDS -->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![License][license-shield]][license-url]
 
-Program Python yang secara otomatis memencet keyboard untuk memainkan lagu (MIDI) — cocok untuk game piano seperti **Sky: Children of the Light**, **Piano Tiles**, atau instrumen virtual berbasis keyboard mapping.
 
-> **Sensitivity**: PUBLIC — tidak ada kredensial, data pribadi, atau konfigurasi produksi di repo ini.
 
----
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <h3 align="center">playSong — MIDI to Keyboard Auto-Player</h3>
 
-## ✨ Fitur
+  <p align="center">
+    Konversi file MIDI menjadi simulasi penekanan keyboard otomatis untuk game piano.
+    <br />
+    <a href="docs/SYSTEM_MAP.md"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/Gulpanjul/MidiToTyping/issues/new?labels=bug">Report Bug</a>
+    &middot;
+    <a href="https://github.com/Gulpanjul/MidiToTyping/issues/new?labels=enhancement">Request Feature</a>
+  </p>
+</div>
 
-- 🎹 **Auto-player MIDI** — parsing file `.mid` / `.midi` otomatis ke mapping tombol keyboard
-- 📁 **Multi-folder scan** — tambah berapapun folder, scan rekursif semua subfolder
-- 🔍 **GUI pemilih lagu** — filter real-time, sort kolom, grouping per folder, navigasi keyboard
-- ⚡ **Slider kecepatan** — 0.25× sampai 3.00×
-- ⏯ **Hotkey playback** — Play/Pause, Rewind, Skip, Restart
-- 🎼 **Tempo marker in-song** — dukung `tempo=120` di tengah lagu
 
----
 
-## 📦 Struktur Project
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#file-format">File Format</a></li>
+    <li><a href="#build">Build ke .exe</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
-```
-py/
-├── playSong_clean.py      ← Source utama
-├── playSong_clean.spec    ← PyInstaller spec file
-├── dist/                  ← Hasil build (.exe)
-├── build/                 ← Cache build PyInstaller
-├── tests/                 ← Test scripts & sample MIDI
-├── archive/               ← Versi lama, file referensi
-└── docs/                  ← Standar LSH Group + fe-acara guidelines
-```
 
----
 
-## 🚀 Menjalankan (Development)
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+**playSong** adalah aplikasi Python yang mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis — cocok untuk game piano berbasis keyboard seperti **Sky: Children of the Light** dan **Piano Tiles**. User memilih file lagu via GUI, lalu aplikasi menekan tombol keyboard sesuai timing MIDI secara otomatis.
+
+Fitur utama:
+* Multi-folder scan rekursif untuk file `.mid` / `.midi`
+* GUI pemilih lagu dengan filter real-time, sort kolom, dan navigasi keyboard
+* Slider kecepatan playback 0.25× – 3.00×
+* Hotkey global: Play/Pause, Rewind, Skip, Restart
+* Dukungan tempo marker in-song (`tempo=120`)
+* Dua tema (dark/light), dua palet warna (celestial/grand piano), dan dua bahasa (ID/EN)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+### Built With
+
+* [![Python][Python-badge]][Python-url]
+* [![Tkinter][Tkinter-badge]][Tkinter-url]
+* [![mido][mido-badge]][mido-url]
+* [![keyboard][keyboard-badge]][keyboard-url]
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.10+
-- Library: `keyboard`, `mido`
+* Python 3.10+ (disarankan 3.12 untuk build Nuitka)
+* Windows (global keyboard hook tidak tersedia di Linux/macOS)
+* **Hak administrator Windows** — dibutuhkan oleh `keyboard` library untuk global hook
 
-```bash
-pip install keyboard mido
-```
+### Installation
 
-### Run
+1. Clone repo
+   ```sh
+   git clone https://github.com/Gulpanjul/MidiToTyping.git
+   cd MidiToTyping
+   ```
 
-```bash
-python playSong_clean.py
-```
+2. Install dependencies
+   ```sh
+   pip install keyboard mido
+   ```
 
-> **⚠️ Windows**: Library `keyboard` memerlukan **administrator privileges** untuk menangkap global hotkey. Jalankan terminal sebagai Administrator.
+3. Jalankan sebagai Administrator
+   ```sh
+   python playSong_clean.py
+   ```
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🎮 Cara Pakai
 
-1. Jalankan program → GUI pemilih file terbuka
-2. Klik **➕ Tambah** untuk menambahkan folder berisi file `.mid`
-3. Program akan scan rekursif semua subfolder
-4. Filter dengan kolom search, pilih lagu, set kecepatan dengan slider
-5. Klik **▶ Mainkan File Ini** (atau double-click, atau tekan Enter)
-6. Fokuskan window game target, lalu tekan hotkey untuk mulai:
+
+<!-- USAGE -->
+## Usage
+
+1. Jalankan program → splash screen muncul ~2 detik, lalu GUI pemilih lagu terbuka
+2. Klik **➕ Tambah** untuk menambahkan folder berisi file `.mid` / `.midi`
+3. Program scan rekursif semua subfolder secara otomatis
+4. Filter dengan search bar, pilih lagu, set kecepatan dengan slider
+5. Klik **▶ Mainkan File Ini** (atau double-click / tekan Enter)
+6. Fokuskan window game target, lalu gunakan hotkey berikut:
 
 ### Hotkey Playback
 
 | Tombol | Fungsi |
 |--------|--------|
-| `DELETE` | Play / Pause |
-| `HOME` | Rewind (mundur 10 nada) |
-| `END` | Skip (maju 10 nada) |
+| `DELETE` | Play / Pause toggle |
+| `HOME` | Rewind — mundur 10 nada |
+| `END` | Skip — maju 10 nada (atau reset jika mendekati akhir) |
 | `INSERT` | Restart dari awal |
-| `Ctrl+C` | Keluar program |
 
----
+### Known Limitations
 
-## 📝 Format File Lagu
+1. **Window game harus punya fokus** — `keyboard` library mensimulasikan penekanan tombol fisik secara global; mengetik di aplikasi lain saat lagu main akan ter-interrupt.
+2. **Tidak bisa target HWND spesifik** — game modern (Unity/Unreal) menggunakan DirectInput/Raw Input yang mem-bypass Windows message queue.
+3. **Butuh admin di Windows** — global keyboard hook memerlukan elevated privileges.
+4. **MIDI multi-channel flattened** — semua track digabung; not di luar range 61-tombol di-fold ke oktaf terdekat.
+5. **Timer jitter ~10–15ms** — `threading.Timer` di Windows tidak presisi sempurna; lagu BPM sangat tinggi mungkin terasa sedikit off.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- FILE FORMAT -->
+## File Format
 
 ### MIDI (direkomendasikan)
 
-File `.mid` / `.midi` langsung didukung. Program otomatis mengonversi not MIDI ke mapping piano 61-tombol (mulai dari C2 = note 36).
+File `.mid` / `.midi` langsung didukung. Program otomatis mengonversi not MIDI ke mapping piano 61-tombol (C2–C7).
 
-### Text Format (fallback internal)
+### Text Format (internal)
 
-Saat memproses MIDI, program menghasilkan file temp `~temp_midi_convert.txt` dengan format:
+Saat memproses MIDI, program menghasilkan file temp `~temp_midi_convert.txt`:
 
 ```
 <timestamp_beat>  <tombol>
-0.0000   q        ← tekan tombol 'q'
-0.5000   we       ← tekan 'w' dan 'e' bersamaan
-1.0000   ~q       ← lepaskan tombol 'q' (prefix ~)
+0.0000   q         ← tekan tombol 'q'
+0.5000   we        ← tekan 'w' dan 'e' bersamaan
+1.0000   ~q        ← lepaskan tombol 'q' (prefix ~)
 1.5000   tempo=120 ← ubah BPM di tengah lagu
 ```
 
@@ -107,87 +173,126 @@ Saat memproses MIDI, program menghasilkan file temp `~temp_midi_convert.txt` den
 1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm
 ```
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🔨 Build ke `.exe`
 
-Project sudah punya `playSong_clean.spec`. Untuk rebuild:
 
-```bash
-pip install pyinstaller
-pyinstaller playSong_clean.spec
+<!-- BUILD -->
+## Build ke .exe
+
+### PyInstaller (direkomendasikan, ~10 MB)
+
+```sh
+uv tool install pyinstaller --with keyboard --with mido
+%USERPROFILE%\.local\bin\pyinstaller.exe playSong_clean.spec --noconfirm
 ```
 
 Output: `dist/playSong_clean.exe`
 
-### Opsi build alternatif (tanpa spec file)
+### Nuitka (lebih kecil & startup lebih cepat, ~8.5 MB)
 
-```bash
-pyinstaller --onefile --console playSong_clean.py
+Membutuhkan Python 3.12 (`--mingw64` tidak support Python 3.13+).
+
+```sh
+uv python install 3.12
+uv tool install nuitka --python 3.12 --with keyboard --with mido --with zstandard --force
+
+%USERPROFILE%\AppData\Roaming\uv\tools\nuitka\Scripts\python.exe -m nuitka ^
+  --standalone --onefile --windows-console-mode=disable ^
+  --enable-plugin=tk-inter --include-module=keyboard --include-package=mido ^
+  --mingw64 --lto=yes --assume-yes-for-downloads ^
+  --output-filename=playSong_clean.exe --output-dir=dist_nuitka playSong_clean.py
 ```
 
----
+Output: `dist_nuitka/playSong_clean.exe`
 
-## ⚠️ Known Limitations
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-Ini batasan yang **harus diketahui sebelum pakai** (G3 Discernment — surface problems, don't hide them):
 
-1. **Hanya bekerja di foreground window** — library `keyboard` mensimulasikan penekanan tombol fisik secara global. Artinya window game harus punya fokus. Mengetik di aplikasi lain saat lagu main akan ter-interrupt.
 
-2. **Tidak bisa target HWND spesifik** — pendekatan `PostMessage`/`SendMessage` ke window handle sudah dipertimbangkan, tapi **tidak dijalankan** karena mayoritas game modern (Unity, Unreal) pakai DirectInput/Raw Input yang mem-bypass message queue Windows. Pesan yang dikirim akan diabaikan engine game.
+<!-- ROADMAP -->
+## Roadmap
 
-3. **Butuh admin di Windows** — global keyboard hook memerlukan elevated privileges.
+- [x] MIDI auto-player dengan GUI multi-folder
+- [x] Hotkey global (Play/Pause/Rewind/Skip/Restart)
+- [x] Speed slider 0.25× – 3.00×
+- [x] Tema dark/light + palet warna + bilingual UI
+- [x] Build ke `.exe` (PyInstaller & Nuitka)
+- [ ] Kompensasi drift timer untuk lagu panjang
+- [ ] Background thread untuk scan folder besar (>10.000 file)
+- [ ] Debounce pada search bar untuk 1000+ file MIDI
 
-4. **MIDI multi-channel flattened** — semua track digabung. Mapping not di luar range 61-tombol akan dilipat (folded) ke oktaf terdekat.
+Lihat [open issues](https://github.com/Gulpanjul/MidiToTyping/issues) untuk daftar fitur yang diusulkan dan known issues.
 
-5. **Timer latency** — `threading.Timer` punya jitter ~10-15ms pada Windows. Lagu dengan BPM sangat tinggi mungkin terasa kurang presisi.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
 
-## 🛡 Security & Compliance
 
-Project ini mengikuti **LSH Group AI-Assisted Development Standards v1.0** (lihat [docs/CLAUDE.md](docs/CLAUDE.md)):
+<!-- CONTRIBUTING -->
+## Contributing
 
-- ✅ **No hardcoded secrets** — tidak ada API key, password, atau token
-- ✅ **No PII** — tidak ada data pengguna nyata
-- ✅ **Error handling** — parser file dan MIDI punya graceful fallback
-- ✅ **AI transparency** — lihat footer
+Kontribusi sangat diapresiasi. Jika punya saran, silakan fork repo ini dan buat pull request, atau buka issue dengan tag `enhancement`.
 
-**Sensitivity Level**: PUBLIC (Level 0) — safe untuk dishare internal maupun eksternal.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🧪 Testing
 
-File test & sample MIDI ada di [tests/](tests/):
 
-```bash
-python tests/test_midi.py
-python tests/test_playSong.py
-```
-
----
-
-## 📚 Dokumentasi Tambahan
-
-- [docs/CLAUDE.md](docs/CLAUDE.md) — Clean code standards (frontend + LSH Group AI discipline)
-- [docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) — Cheat sheet 4D + 6-Gate Protocol
-- [docs/PORTABILITY_ANALYSIS.md](docs/PORTABILITY_ANALYSIS.md) — Analisis portabilitas struktur clean code
-
-> **Catatan**: Sebagian besar dokumen di `docs/` adalah standar **frontend Next.js** (fe-acara). Bagian yang relevan untuk project Python ini adalah: **file header block**, **AI transparency**, **4D Protocol**, **6-Gate Protocol**, dan **security standards**.
-
----
-
-## 📄 Lisensi
+<!-- LICENSE -->
+## License
 
 Internal project. Tidak untuk distribusi eksternal tanpa izin.
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-**AI Role**: Co-authored — Claude Code (Opus 4.6) drafted the README, human maintainer reviews and approves.
-**Human verification**: Reviewed — pastikan technical claims akurat sebelum dishare.
 
-*Produced with AI assistance | Reviewed by: [Your Name]*
 
-**Last Updated**: 2026-04-13
-**Version**: 1.0.0
+<!-- CONTACT -->
+## Contact
+
+Gulpanjul — [gulpa.andhikac@gmail.com](mailto:gulpa.andhikac@gmail.com)
+
+Project Link: [https://github.com/Gulpanjul/MidiToTyping](https://github.com/Gulpanjul/MidiToTyping)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+
+* [mido — MIDI Objects for Python](https://mido.readthedocs.io/)
+* [keyboard — Hook and simulate keyboard events](https://github.com/boppreh/keyboard)
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
+* [Img Shields](https://shields.io)
+* [PyInstaller](https://pyinstaller.org/)
+* [Nuitka](https://nuitka.net/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+[contributors-shield]: https://img.shields.io/github/contributors/Gulpanjul/MidiToTyping.svg?style=for-the-badge
+[contributors-url]: https://github.com/Gulpanjul/MidiToTyping/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Gulpanjul/MidiToTyping.svg?style=for-the-badge
+[forks-url]: https://github.com/Gulpanjul/MidiToTyping/network/members
+[stars-shield]: https://img.shields.io/github/stars/Gulpanjul/MidiToTyping.svg?style=for-the-badge
+[stars-url]: https://github.com/Gulpanjul/MidiToTyping/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Gulpanjul/MidiToTyping.svg?style=for-the-badge
+[issues-url]: https://github.com/Gulpanjul/MidiToTyping/issues
+[license-shield]: https://img.shields.io/badge/license-internal-lightgrey?style=for-the-badge
+[license-url]: #license
+[Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
+[Python-url]: https://python.org/
+[Tkinter-badge]: https://img.shields.io/badge/Tkinter-GUI-blue?style=for-the-badge
+[Tkinter-url]: https://docs.python.org/3/library/tkinter.html
+[mido-badge]: https://img.shields.io/badge/mido-MIDI-green?style=for-the-badge
+[mido-url]: https://mido.readthedocs.io/
+[keyboard-badge]: https://img.shields.io/badge/keyboard-hook-orange?style=for-the-badge
+[keyboard-url]: https://github.com/boppreh/keyboard
