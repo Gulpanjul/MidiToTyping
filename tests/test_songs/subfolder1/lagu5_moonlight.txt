@@ -1,0 +1,14 @@
+# Moonlight Sonata (simplified)
+0.0  tempo=60
+0.0  eiu
+0.5  eiu
+1.0  eiu
+1.5  diu
+2.0  diu
+2.5  diu
+3.0  ciy
+3.5  ciy
+4.0  ciy
+4.5  bhy
+5.0  bhy
+5.5  bhy

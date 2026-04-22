@@ -1,0 +1,23 @@
+# Build output
+dist/
+dist_nuitka/
+build/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Nuitka artifacts
+*.build/
+*.onefile-build/
+nuitka-crash-report.xml
+
+# Build logs
+*.log
+
+# Runtime temp
+~temp_midi_convert.txt
+
+# Archive
+archive/
