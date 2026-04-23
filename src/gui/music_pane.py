@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 import src.constants as state
+from src.gui.icons import search as _sicon
 
 
 def _scan_flat(folder: str) -> list:
@@ -64,12 +65,11 @@ def build_music_pane(ctx: dict) -> None:
     frm_right.pack(side='left', fill='both', expand=True)
     frm_frow = tk.Frame(frm_right, bg=C['BG'])
     frm_frow.pack(fill='x', pady=(0, 6))
-    tk.Label(frm_frow, text='🔍', bg=C['BG'], fg=C['TEXT'],
-             font=('Segoe UI', 11)).pack(side='left')
+    cvs_search = tk.Canvas(frm_frow, width=18, height=18, bg=C['BG'], highlightthickness=0, bd=0)
+    _sicon(cvs_search, C['SUBTEXT'], 16, 'icon'); cvs_search.move('icon', 1, 1); cvs_search.pack(side='left')
     search_var = tk.StringVar()
-    search_entry = tk.Entry(frm_frow, textvariable=search_var, bg=C['ENTRY_BG'],
-                            fg=C['TEXT'], insertbackground=C['TEXT'],
-                            relief='flat', font=('Segoe UI', 10), bd=6)
+    search_entry = tk.Entry(frm_frow, textvariable=search_var, bg=C['ENTRY_BG'], fg=C['TEXT'],
+                            insertbackground=C['TEXT'], relief='flat', font=('Segoe UI', 10), bd=6)
     search_entry.pack(side='left', fill='x', expand=True, padx=6)
     lbl_count = tk.Label(frm_frow, text='0 file', bg=C['BG'], fg=C['SUBTEXT'],
                          font=('Segoe UI', 8), width=14)
@@ -94,7 +94,7 @@ def build_music_pane(ctx: dict) -> None:
     lbl_status.pack(fill='x')
     ctx.update({
         'frm_right': frm_right, 'frm_frow': frm_frow, 'search_var': search_var,
-        'search_entry': search_entry, 'lbl_count': lbl_count,
+        'search_entry': search_entry, 'lbl_count': lbl_count, 'cvs_search': cvs_search,
         'tree': tree, 'vsb': vsb, 'frm_status_bar': frm_status_bar, 'lbl_status': lbl_status,
     })
     search_var.trace_add('write', lambda *_: ctx['refresh_music']())

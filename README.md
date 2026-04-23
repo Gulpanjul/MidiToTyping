@@ -70,8 +70,9 @@ Fitur utama:
 * Slider kecepatan playback 0.25× – 3.00×
 * Hotkey global: Play/Pause, Rewind, Skip, Restart
 * Dukungan tempo marker in-song (`tempo=120`)
-* UI ber-style **shadcn**: dua tema (dark/light), dua palet warna (**Zinc** & **Slate**), dua bahasa (ID/EN)
-* Tombol **Info (ℹ)** di header — popup berisi versi, author, hotkey cheat-sheet, link GitHub
+* UI ber-style **shadcn** dengan **Heroicon-inspired custom icons** (digambar via Canvas, bukan font)
+* Dua tema (dark/light dengan sun/moon icon toggle), dua palet warna (**Zinc** & **Slate**), dua bahasa (ID/EN)
+* Tombol **Info** di header — popup berisi versi, author, hotkey cheat-sheet, link GitHub
 * **Arsitektur modular** — 18 file Python, masing-masing ≤ 100 baris, dengan shared context dict
 * **Startup cepat** — lazy-import strategi: splash muncul sebelum modul berat di-load
 
@@ -170,6 +171,7 @@ src/
 └── gui/
     ├── splash.py            # splash screen (rendered first)
     ├── widgets.py           # make_btn, rebuild_seg factories
+    ├── icons.py             # Heroicon-inspired custom icons (Canvas primitives)
     ├── info_popup.py        # tombol ℹ popup (About)
     ├── header.py            # title + theme/palette/lang seg controls
     ├── folder_nav.py        # folder navigation logic
@@ -265,6 +267,7 @@ Output: `dist_nuitka/playSong_clean.exe`
 - [x] Build ke `.exe` (PyInstaller & Nuitka)
 - [x] Arsitektur modular (18 file × ≤100 baris)
 - [x] UI shadcn (palet Zinc + Slate, border 1px, font konsisten)
+- [x] Heroicon-inspired custom icons (arrow-left, plus, minus, sun, moon, info, play, x-mark, search) digambar via Canvas — no SVG/PIL deps
 - [x] Info popup (versi, author, hotkey cheat-sheet)
 - [x] Lazy imports (startup ~25–30% lebih cepat)
 - [x] Keystroke whitelist (defense-in-depth)

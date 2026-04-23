@@ -43,3 +43,21 @@ def rebuild_seg(frame, items, cur_val, cmd_fn, C) -> None:
     for val, lbl in items:
         make_seg_btn(frame, lbl, cur_val == val,
                      lambda v=val: cmd_fn(v), C).pack(side='left', padx=1)
+
+
+def rebuild_seg_icons(frame, items, cur_val, cmd_fn, C) -> None:
+    for child in frame.winfo_children():
+        child.destroy()
+    ahov = C.get('ACCENT_HOV', C['BTN_HOV'])
+    for val, icon_fn in items:
+        active = cur_val == val
+        bg, fg = (C['ACCENT'], C['BG']) if active else (C['PANEL'], C['TEXT'])
+        hov    = ahov if active else C['BTN_HOV']
+        c = tk.Canvas(frame, width=24, height=22, bg=bg,
+                      highlightthickness=0, bd=0, cursor='hand2')
+        icon_fn(c, fg, 14, 'icon')
+        c.move('icon', 5, 4)
+        c.bind('<Button-1>', lambda _, v=val: cmd_fn(v))
+        c.bind('<Enter>', lambda _, ca=c, h=hov: ca.configure(bg=h))
+        c.bind('<Leave>', lambda _, ca=c, b=bg: ca.configure(bg=b))
+        c.pack(side='left', padx=1)

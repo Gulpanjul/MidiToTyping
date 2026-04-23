@@ -41,9 +41,11 @@ def init_folder_nav(ctx: dict) -> None:
             lb.itemconfig(i, foreground=ctx['C']['TEXT'])
         ctx['lbl_breadcrumb'].config(text=_breadcrumb())
         can_back = bool(ctx['nav_stack']) or folder is not None
-        ctx['btn_back'].config(state='normal' if can_back else 'disabled',
-                               fg=ctx['C']['ACCENT'] if can_back else ctx['C']['SUBTEXT'])
-        ctx['btn_remove'].config(state='normal' if folder is None else 'disabled')
+        from src.gui.icons import retint
+        C = ctx['C']
+        retint(ctx['btn_back'], C['TEXT'] if can_back else C['SUBTEXT'])
+        ctx['_can_back'] = can_back
+        ctx['_can_remove'] = folder is None
 
     def on_folder_click(event=None) -> None:
         sel = ctx['folder_lb'].curselection()
@@ -57,6 +59,8 @@ def init_folder_nav(ctx: dict) -> None:
             load_folder_pane(path)
 
     def on_back_click() -> None:
+        if not ctx.get('_can_back', False):
+            return
         prev = ctx['nav_stack'].pop() if ctx['nav_stack'] else None
         load_folder_pane(prev)
         ctx['active_folder'][0] = ctx['nav_folder'][0]
@@ -74,7 +78,7 @@ def init_folder_nav(ctx: dict) -> None:
                     load_folder_pane(None)
 
     def on_remove_folder() -> None:
-        if ctx['nav_folder'][0] is not None:
+        if not ctx.get('_can_remove', True) or ctx['nav_folder'][0] is not None:
             return
         sel = ctx['folder_lb'].curselection()
         if not sel or sel[0] >= len(ctx['display_folders']):

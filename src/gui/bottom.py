@@ -3,6 +3,7 @@ import tkinter as tk
 # datetime, messagebox imported lazily inside handlers
 import src.constants as state
 from src.gui.widgets import make_btn
+from src.gui.icons import make_icon_button, x_mark
 
 
 def build_bottom(ctx: dict) -> None:
@@ -75,8 +76,11 @@ def build_bottom(ctx: dict) -> None:
 
     frm_bot = tk.Frame(root, bg=C['BG'])
     frm_bot.pack(pady=10)
-    btn_play   = make_btn(frm_bot, S['play_btn'],   confirm_select, C, accent=True, width=22)
-    btn_cancel = make_btn(frm_bot, S['cancel_btn'], lambda: root.after_idle(ctx['close_window']), C, width=11)
+    btn_play = make_btn(frm_bot, S['play_btn'], confirm_select, C, accent=True, width=22)
+    btn_cancel = make_icon_button(frm_bot, x_mark,
+                                  lambda: root.after_idle(ctx['close_window']),
+                                  bg=C['PANEL'], color=C['TEXT'], hover=C['BTN_HOV'],
+                                  size=16, pad_x=10, pad_y=9)
     btn_play.pack(side='left', padx=6)
     btn_cancel.pack(side='left')
 

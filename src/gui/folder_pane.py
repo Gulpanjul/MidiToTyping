@@ -1,6 +1,6 @@
 import tkinter as tk
 import src.constants as state
-from src.gui.widgets import make_btn
+from src.gui.icons import make_icon_button, arrow_left, plus, minus
 
 
 def build_folder_pane(ctx: dict) -> None:
@@ -19,11 +19,10 @@ def build_folder_pane(ctx: dict) -> None:
 
     frm_back_row = tk.Frame(frm_left, bg=C['BG'])
     frm_back_row.pack(fill='x', pady=(2, 0))
-    btn_back = tk.Button(
-        frm_back_row, text=S['back_btn'], relief='flat', bg=C['BG'], fg=C['SUBTEXT'],
-        font=('Segoe UI', 8, 'bold'), padx=4, pady=2, cursor='hand2', bd=0,
-        state='disabled', activebackground=C['PANEL'], activeforeground=C['TEXT'],
-        command=lambda: ctx['on_back_click'](),
+    btn_back = make_icon_button(
+        frm_back_row, arrow_left, lambda: ctx['on_back_click'](),
+        bg=C['BG'], color=C['SUBTEXT'], hover=C['ENTRY_BG'],
+        size=14, pad_x=4, pad_y=3,
     )
     btn_back.pack(side='left')
     lbl_breadcrumb = tk.Label(frm_back_row, text='/', bg=C['BG'], fg=C['SUBTEXT'],
@@ -39,8 +38,13 @@ def build_folder_pane(ctx: dict) -> None:
 
     frm_folder_btns = tk.Frame(frm_left, bg=C['BG'])
     frm_folder_btns.pack(fill='x')
-    btn_add    = make_btn(frm_folder_btns, S['add_folder_btn'],    lambda: ctx['on_add_folder'](),    C, accent=True)
-    btn_remove = make_btn(frm_folder_btns, S['remove_folder_btn'], lambda: ctx['on_remove_folder'](), C)
+    ahov = C.get('ACCENT_HOV', C['BTN_HOV'])
+    btn_add = make_icon_button(frm_folder_btns, plus, lambda: ctx['on_add_folder'](),
+                               bg=C['ACCENT'], color=C['BG'], hover=ahov,
+                               size=14, pad_x=10, pad_y=5)
+    btn_remove = make_icon_button(frm_folder_btns, minus, lambda: ctx['on_remove_folder'](),
+                                  bg=C['PANEL'], color=C['TEXT'], hover=C['BTN_HOV'],
+                                  size=14, pad_x=10, pad_y=5)
     btn_add.pack(side='left', padx=(0, 4), fill='x', expand=True)
     btn_remove.pack(side='left', fill='x', expand=True)
 
@@ -50,32 +54,30 @@ def build_folder_pane(ctx: dict) -> None:
     lbl_speed_section = tk.Label(frm_left, text=S['speed_label'], bg=C['BG'],
                                  fg=C['SUBTEXT'], font=('Segoe UI', 8, 'bold'))
     lbl_speed_section.pack(anchor='w', pady=(0, 2))
-
     speed_var = tk.DoubleVar(value=state.playback_speed)
 
     def _diff(v):
-        s = S
-        if v <= 0.45: return s['diff_beginner']
-        if v <= 0.65: return s['diff_learning']
-        if v <= 0.85: return s['diff_relaxed']
-        if v <= 1.05: return s['diff_normal']
-        if v <= 1.50: return s['diff_advanced']
-        if v <= 2.25: return s['diff_pro']
-        return s['diff_master']
+        if v <= 0.45: return S['diff_beginner']
+        if v <= 0.65: return S['diff_learning']
+        if v <= 0.85: return S['diff_relaxed']
+        if v <= 1.05: return S['diff_normal']
+        if v <= 1.50: return S['diff_advanced']
+        if v <= 2.25: return S['diff_pro']
+        return S['diff_master']
 
     lbl_speed = tk.Label(frm_left, text=f'{state.playback_speed:.2f}×',
                          bg=C['BG'], fg=C['ACCENT'], font=('Segoe UI', 12, 'bold'))
     lbl_speed.pack()
-    _d0_text, _d0_color = _diff(state.playback_speed)
-    lbl_diff = tk.Label(frm_left, text=_d0_text, fg=_d0_color, bg=C['BG'],
+    _d0t, _d0c = _diff(state.playback_speed)
+    lbl_diff = tk.Label(frm_left, text=_d0t, fg=_d0c, bg=C['BG'],
                         font=('Segoe UI', 9, 'bold'))
     lbl_diff.pack(pady=(0, 2))
 
     def on_speed(*_):
         v = speed_var.get()
         lbl_speed.config(text=f'{v:.2f}×')
-        label, color = _diff(v)
-        lbl_diff.config(text=label, fg=color)
+        t, col = _diff(v)
+        lbl_diff.config(text=t, fg=col)
 
     slider_w = tk.Scale(frm_left, variable=speed_var, from_=0.25, to=3.0, resolution=0.05,
                         orient='horizontal', bg=C['BG'], fg=C['SUBTEXT'],
