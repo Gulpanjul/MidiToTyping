@@ -95,6 +95,7 @@ def process_file() -> 'tuple | str | None':
         print(S['no_file_msg'])
         return None
 
+    state.current_song = ctx['selected_path'][0]
     print(f"\nFile   : {ctx['selected_path'][0]}")
     print(f"Speed  : {state.playback_speed}x")
     return safe_parse(ctx['selected_path'][0], S)

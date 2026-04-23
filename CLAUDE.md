@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **playSong** adalah aplikasi Python yang mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis, untuk digunakan pada game piano seperti *Sky: Children of the Light* dan *Piano Tiles*. Aplikasi ini membutuhkan **hak administrator Windows** karena menggunakan global keyboard hook.
 
+## Post-Fix Workflow (WAJIB)
+
+**Setiap selesai melakukan perbaikan kode (bugfix / feature change / refactor):**
+
+1. Jalankan test suite:
+   ```bash
+   PYTHONIOENCODING=utf-8 python tests/test_playSong.py
+   ```
+2. **Rebuild .exe (WAJIB)** — pastikan fix benar-benar bekerja di build windowed:
+   ```bash
+   %USERPROFILE%\.local\bin\pyinstaller.exe playSong_clean.spec --noconfirm
+   ```
+3. Verifikasi `dist/playSong_clean.exe` berhasil ter-build dan size wajar (~11 MB).
+4. Jika perubahan mempengaruhi startup / hotkey / GUI: lakukan smoke test manual pada exe (jalankan, pilih lagu, test hotkey).
+
+> Alasan: `input()`, `sys.stdin`, `sys.stdout`, dan lazy-import bisa berbeda perilakunya antara `python script.py` (console=True) vs .exe bundle (`console=False`). Test suite tidak mendeteksi ini. Build + smoke test exe adalah satu-satunya verifikasi akhir.
+
 ## Commands
 
 **Install dependencies:**
@@ -124,6 +141,8 @@ Pattern akses dari modul lain: `import src.constants as state; state.LANG = 'en'
 - `HOME` — Rewind 10 note
 - `END` — Skip 10 note (atau reset jika mendekati akhir)
 - `INSERT` — Restart dari awal
+
+> Pilih lagu lain / keluar: lewat tombol di **player popup** (`src/gui/player_popup.py`) — bukan via stdin/hotkey. Console mode juga pakai popup yang sama (popup meng-tap `sys.stdout`, sehingga output `print()` tetap visible di CLI + popup).
 
 ### Reload vs Repaint
 

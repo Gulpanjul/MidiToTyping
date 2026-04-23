@@ -7,6 +7,7 @@ playback_speed: float = 1.0
 info_tuple:     tuple = (1.0, None, [])
 _play_gen:      int   = 0
 folder_history: list  = []
+current_song:   str   = ''
 
 CONVERSION_CASES: dict = {
     '!': '1', '@': '2', '#': '3', '£': '3', '$': '4', '%': '5',

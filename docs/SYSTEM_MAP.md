@@ -55,6 +55,7 @@ MidiToTyping/
 │       ├── bottom.py            # bottom buttons + event bindings
 │       ├── repaint.py           # live theme/palette update
 │       ├── process_file.py      # GUI orchestrator (lazy-loaded)
+│       ├── player_popup.py      # in-app player popup (buttons + note history)
 │       └── _parse_handler.py    # safe_parse wrapper with error dialog
 │
 ├── docs/
@@ -222,6 +223,7 @@ Net: **~25–30% lebih cepat** time-to-visible-splash (Python module-load 85 ms 
 | **Reload full window (bahasa)** | Toggle bahasa close + buka window; kecil flicker. Theme/palette pakai repaint live. |
 | **`_scan_flat` non-rekursif** | Scan per-folder; subfolder via navigator bukan scan otomatis |
 | **`print()` saat `console=False`** | Debug output tidak visible di exe — perlu rebuild dengan `console=True` |
+| **`input()` saat `console=False`** | `sys.stdin` None → `RuntimeError: lost sys.stdin`. Dimitigasi: diganti **player popup** (`src/gui/player_popup.py`) — blocking via `root.mainloop()`, stdout di-tap ke Text widget untuk note history |
 
 ---
 

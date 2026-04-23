@@ -1,6 +1,6 @@
 # ============================================================
 # File: playSong_clean.py
-# Date: 2026-04-21
+# Date: 2026-04-23
 # Author: Gulpanjul
 # AI-Assisted: Claude Code (Sonnet 4.6)
 # ============================================================
@@ -9,7 +9,7 @@ import src.constants as state
 from src.config import load_config
 from src.playback import play_next_note, parse_info
 from src.gui.splash import show_splash
-# process_file imported lazily in main() — defers transitive imports
+# process_file + player_popup imported lazily in main()
 
 
 def on_delete_press(event) -> bool:
@@ -50,22 +50,6 @@ def on_insert_press(event) -> None:
     threading.Thread(target=play_next_note, args=(gen,), daemon=True).start()
 
 
-def _print_ready():
-    print('\n╔══════════════════════════════╗')
-    print('║     Song Player - Ready      ║')
-    print('╠══════════════════════════════╣')
-    print('║  DELETE  → Play / Pause      ║')
-    print('║  HOME    → Rewind  (−10)     ║')
-    print('║  END     → Skip    (+10)     ║')
-    print('║  INSERT  → Restart dari awal ║')
-    print('╠══════════════════════════════╣')
-    print('║  Enter   → Pilih lagu lain   ║')
-    print('║  Ctrl+C  → Keluar            ║')
-    print('╚══════════════════════════════╝')
-    print(f'\n  Total nada : {len(state.info_tuple[2])}')
-    print(f'  Kecepatan  : {state.playback_speed}×\n')
-
-
 def main() -> None:
     import keyboard
     load_config()
@@ -74,6 +58,7 @@ def main() -> None:
         keyboard.on_press_key(key, fn)
     show_splash()
     from src.gui.process_file import process_file
+    from src.gui.player_popup import show_player
     while True:
         result = process_file()
         if result == '__RELOAD__':
@@ -86,15 +71,13 @@ def main() -> None:
         state.stored_index = 0
         state.is_playing   = False
         state._play_gen   += 1
-        _print_ready()
         try:
-            input('Menunggu perintah...\n')
-        except KeyboardInterrupt:
-            break
+            action = show_player(state.current_song)
         finally:
             state.is_playing = False
             state._play_gen += 1
-    print('\nKeluar.')
+        if action == 'exit':
+            break
 
 if __name__ == '__main__':
     main()
