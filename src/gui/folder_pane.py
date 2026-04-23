@@ -32,8 +32,9 @@ def build_folder_pane(ctx: dict) -> None:
 
     folder_lb = tk.Listbox(frm_left, bg=C['ENTRY_BG'], fg=C['TEXT'],
                            selectbackground=C['ACCENT'], selectforeground=C['BG'],
-                           font=('Segoe UI', 9), relief='flat', bd=0, activestyle='none')
-    folder_lb.pack(fill='both', expand=True, pady=4)
+                           font=('Segoe UI', 9), relief='flat', bd=0,
+                           activestyle='none', highlightthickness=0)
+    folder_lb.pack(fill='both', expand=True, pady=4, ipady=2)
     folder_lb.bind('<<ListboxSelect>>', lambda e: ctx['on_folder_click'](e))
 
     frm_folder_btns = tk.Frame(frm_left, bg=C['BG'])

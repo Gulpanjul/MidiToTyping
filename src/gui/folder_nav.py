@@ -36,7 +36,7 @@ def init_folder_nav(ctx: dict) -> None:
         items = list(state.folder_history) if folder is None else (_get_subdirs(folder) or [folder])
         ctx['display_folders'].extend(items)
         for path in items:
-            lb.insert(tk.END, f'📁  {os.path.basename(path) or path}')
+            lb.insert(tk.END, f'▸  {os.path.basename(path) or path}')
         for i in range(lb.size()):
             lb.itemconfig(i, foreground=ctx['C']['TEXT'])
         ctx['lbl_breadcrumb'].config(text=_breadcrumb())

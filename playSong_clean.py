@@ -96,6 +96,5 @@ def main() -> None:
             state._play_gen += 1
     print('\nKeluar.')
 
-
 if __name__ == '__main__':
     main()
