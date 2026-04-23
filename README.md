@@ -47,6 +47,7 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#architecture">Architecture</a></li>
     <li><a href="#file-format">File Format</a></li>
     <li><a href="#build">Build ke .exe</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -65,12 +66,14 @@
 **playSong** adalah aplikasi Python yang mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis — cocok untuk game piano berbasis keyboard seperti **Sky: Children of the Light** dan **Piano Tiles**. User memilih file lagu via GUI, lalu aplikasi menekan tombol keyboard sesuai timing MIDI secara otomatis.
 
 Fitur utama:
-* Multi-folder scan rekursif untuk file `.mid` / `.midi`
-* GUI pemilih lagu dengan filter real-time, sort kolom, dan navigasi keyboard
+* Multi-folder picker dengan filter real-time, sort kolom, dan navigasi keyboard
 * Slider kecepatan playback 0.25× – 3.00×
 * Hotkey global: Play/Pause, Rewind, Skip, Restart
 * Dukungan tempo marker in-song (`tempo=120`)
-* Dua tema (dark/light), dua palet warna (celestial/grand piano), dan dua bahasa (ID/EN)
+* UI ber-style **shadcn**: dua tema (dark/light), dua palet warna (**Zinc** & **Slate**), dua bahasa (ID/EN)
+* Tombol **Info (ℹ)** di header — popup berisi versi, author, hotkey cheat-sheet, link GitHub
+* **Arsitektur modular** — 18 file Python, masing-masing ≤ 100 baris, dengan shared context dict
+* **Startup cepat** — lazy-import strategi: splash muncul sebelum modul berat di-load
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -149,6 +152,48 @@ Fitur utama:
 
 
 
+<!-- ARCHITECTURE -->
+## Architecture
+
+Proyek ini di-refactor dari monolith ~1400 baris menjadi package modular `src/` — tiap file ≤ 100 baris, state shared via context dict (`ctx`) yang dipass antar modul GUI.
+
+```
+playSong_clean.py            # entry point: main() + hotkey handlers
+src/
+├── constants.py             # global state + APP_VERSION metadata
+├── strings.py               # STRINGS bilingual dict (id / en)
+├── themes.py                # palet warna shadcn: Zinc + Slate (dark/light)
+├── config.py                # load/save playSong_config.json
+├── keyboard_sim.py          # press/release/is_shifted + whitelist
+├── midi_parser.py           # MIDI → beat/key array
+├── playback.py              # parse_info + play_next_note engine
+└── gui/
+    ├── splash.py            # splash screen (rendered first)
+    ├── widgets.py           # make_btn, rebuild_seg factories
+    ├── info_popup.py        # tombol ℹ popup (About)
+    ├── header.py            # title + theme/palette/lang seg controls
+    ├── folder_nav.py        # folder navigation logic
+    ├── folder_pane.py       # left panel: folder list + speed slider
+    ├── music_pane.py        # right panel: file list + search
+    ├── bottom.py            # bottom buttons + event bindings
+    ├── repaint.py           # live theme/palette update
+    ├── process_file.py      # GUI orchestrator (lazy-loaded)
+    └── _parse_handler.py    # safe_parse() wrapper with error dialog
+```
+
+**Design principles applied:**
+* Context-dict pattern menggantikan monolith closure
+* Lazy imports untuk `process_file`, `tempfile`, `webbrowser`, `filedialog`, `datetime` → time-to-splash ~25–30% lebih cepat
+* Whitelist karakter di `keyboard_sim.press_letter` → defense-in-depth saat running as admin
+* shadcn-inspired palette, border-b 1px separator, consistent font weight di seg controls
+* Temp file via `tempfile.mkstemp` + `try/finally` cleanup (tidak lagi hardcoded name)
+
+Lihat [docs/SYSTEM_MAP.md](docs/SYSTEM_MAP.md) untuk detail per-fungsi.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
 <!-- FILE FORMAT -->
 ## File Format
 
@@ -158,7 +203,7 @@ File `.mid` / `.midi` langsung didukung. Program otomatis mengonversi not MIDI k
 
 ### Text Format (internal)
 
-Saat memproses MIDI, program menghasilkan file temp `~temp_midi_convert.txt`:
+Saat memproses MIDI, program menghasilkan file temp (di-generate via `tempfile.mkstemp` dengan prefix `~midi_`, dihapus otomatis setelah parse selesai):
 
 ```
 <timestamp_beat>  <tombol>
@@ -218,6 +263,11 @@ Output: `dist_nuitka/playSong_clean.exe`
 - [x] Speed slider 0.25× – 3.00×
 - [x] Tema dark/light + palet warna + bilingual UI
 - [x] Build ke `.exe` (PyInstaller & Nuitka)
+- [x] Arsitektur modular (18 file × ≤100 baris)
+- [x] UI shadcn (palet Zinc + Slate, border 1px, font konsisten)
+- [x] Info popup (versi, author, hotkey cheat-sheet)
+- [x] Lazy imports (startup ~25–30% lebih cepat)
+- [x] Keystroke whitelist (defense-in-depth)
 - [ ] Kompensasi drift timer untuk lagu panjang
 - [ ] Background thread untuk scan folder besar (>10.000 file)
 - [ ] Debounce pada search bar untuk 1000+ file MIDI

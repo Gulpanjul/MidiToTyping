@@ -18,6 +18,10 @@ nuitka-crash-report.xml
 
 # Runtime temp
 ~temp_midi_convert.txt
+~midi_*.txt
 
 # Archive
 archive/
+
+# Claude Code local settings
+.claude/

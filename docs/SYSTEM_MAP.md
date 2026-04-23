@@ -1,12 +1,12 @@
 # SYSTEM_MAP.md — playSong (MidiToTyping)
 
-> Dibuat: 2026-04-22 · Entrypoint: `playSong_clean.py`
+> Dibuat: 2026-04-22 · Direfactor: 2026-04-23 (monolith → modular) · Entrypoint: `playSong_clean.py`
 
 ---
 
 ## Project Summary
 
-**Tujuan:** Mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis untuk game piano berbasis keyboard (_Sky: Children of the Light_, _Piano Tiles_). User memilih file lagu via GUI, lalu aplikasi menekan tombol keyboard sesuai timing MIDI.
+**Tujuan:** Mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis untuk game piano berbasis keyboard (_Sky: Children of the Light_, _Piano Tiles_).
 
 **Tech Stack Utama:**
 
@@ -20,58 +20,7 @@
 | Build | PyInstaller (`.spec`) atau Nuitka (`--mingw64`) |
 | Platform | Windows-only (global keyboard hook) |
 
-**Pola Arsitektur:** Single-file monolith (~1316 baris). Tidak ada layer terpisah — semua fungsi berada dalam satu file. State dikelola melalui variabel global. Concurrency dihandle dengan `threading.Timer` + generation counter (`_play_gen`).
-
----
-
-## Core Logic Flow (Function-Level)
-
-### Alur Startup
-```
-main()
-  └─> load_config()             — baca playSong_config.json (lang/theme/palette/folders)
-  └─> keyboard.on_press_key()   — daftarkan hotkeys global (DELETE/HOME/END/INSERT)
-  └─> show_splash()             — tampilkan splash screen Tkinter ~2 detik
-  └─> [loop] process_file()     — GUI picker (Tkinter mainloop)
-        └─> _scan_flat()        — os.listdir non-rekursif cari .mid/.midi di folder aktif
-        └─> user pilih file
-        └─> return filepath
-  └─> parse_song_file(filepath) — mido baca MIDI → tulis ~temp_midi_convert.txt → parse → list notes
-  └─> parse_info()              — konversi timestamp absolut → delay relatif
-  └─> info_tuple = hasil parse  — simpan di global
-```
-
-### Alur Playback
-```
-Hotkey DELETE
-  └─> on_delete_press()
-        └─> toggle is_playing, increment _play_gen
-        └─> [jika PLAY] Thread → play_next_note(gen)
-              └─> notes[stored_index] → press_letter() / release_letter()
-              └─> increment stored_index
-              └─> delay > 0 → threading.Timer(delay/playback_speed) → play_next_note(gen) [rekursi]
-              └─> delay == 0 → daemon Thread → play_next_note(gen)
-              └─> gen != _play_gen → return (stale timer guard)
-```
-
-### Alur Hotkey Navigasi
-```
-HOME  → on_home_press()   → stored_index -= 10 (rewind)
-END   → on_end_press()    → stored_index += 10, atau reset jika melebihi akhir
-INSERT→ on_insert_press() → reset stored_index=0, restart playback
-```
-
-### Alur Lang/Theme Toggle (Reload Mechanism)
-```
-Klik toggle 🌐 / ☀️🌙 / 🌌🎹 di GUI
-  └─> update global LANG / THEME / PALETTE
-  └─> selected_path[0] = '__RELOAD__'
-  └─> _close_window() → window tutup
-  └─> process_file() return '__RELOAD__'
-  └─> main() loop continue → process_file() dipanggil ulang
-  └─> folder_history tetap (tidak hilang)
-  * Catatan: perubahan tema/palet bisa terjadi live via repaint() tanpa reload penuh
-```
+**Pola Arsitektur:** **Modular package** — 18 file Python di `src/`, masing-masing ≤ 100 baris. State GUI di-pass antar modul via **context dict** (`ctx`). Concurrency playback dihandle dengan `threading.Timer` + generation counter (`_play_gen`).
 
 ---
 
@@ -79,124 +28,188 @@ Klik toggle 🌐 / ☀️🌙 / 🌌🎹 di GUI
 
 ```
 MidiToTyping/
-├── playSong_clean.py          # Entrypoint + seluruh logika aplikasi
-├── playSong_clean.spec        # Konfigurasi build PyInstaller
-├── CLAUDE.md                  # Panduan Claude Code
-├── README.md                  # Dokumentasi publik
-├── .env                       # Hanya berisi: /docs (gitignore pointer)
+├── playSong_clean.py            # entry point: main() + hotkey handlers
+├── playSong_clean.spec          # PyInstaller build config
+├── CLAUDE.md
+├── README.md
+├── .gitignore
+│
+├── src/
+│   ├── __init__.py
+│   ├── constants.py             # global state + APP_VERSION/APP_DATE/APP_AUTHOR
+│   ├── strings.py               # STRINGS bilingual dict (id / en)
+│   ├── themes.py                # THEMES: Zinc + Slate (dark/light) shadcn
+│   ├── config.py                # load/save playSong_config.json
+│   ├── keyboard_sim.py          # press/release/is_shifted + whitelist
+│   ├── midi_parser.py           # MIDI → beat/key array (raises MidoNotAvailable)
+│   ├── playback.py              # parse_info + play_next_note engine
+│   └── gui/
+│       ├── __init__.py
+│       ├── splash.py            # splash screen (pertama yang render)
+│       ├── widgets.py           # make_btn, make_seg_btn, rebuild_seg
+│       ├── info_popup.py        # popup ℹ (About)
+│       ├── header.py            # title + theme/palette/lang seg buttons
+│       ├── folder_nav.py        # folder navigation state & handlers
+│       ├── folder_pane.py       # left panel widgets + speed slider
+│       ├── music_pane.py        # right panel widgets + refresh/sort
+│       ├── bottom.py            # bottom buttons + event bindings
+│       ├── repaint.py           # live theme/palette update
+│       ├── process_file.py      # GUI orchestrator (lazy-loaded)
+│       └── _parse_handler.py    # safe_parse wrapper with error dialog
 │
 ├── docs/
-│   ├── SYSTEM_MAP.md                    # (file ini) — navigasi utama proyek + indeks docs
-│   ├── LSH_FRONTEND_STANDARDS.md        # Standar LSH Group untuk proyek frontend
-│   ├── QUICK_REFERENCE.md               # Cheat sheet ringkas dari LSH_FRONTEND_STANDARDS
-│   ├── DELEGATION_PROMPT.md             # Template prompt untuk membuat proyek frontend baru
-│   ├── PROJECT_TEMPLATE.md              # Panduan setup proyek baru step-by-step
-│   ├── PORTABILITY_ANALYSIS.md          # Analisis portabilitas standar ke framework lain
-│   └── CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md # Tool audit token Claude Code (portable, standalone)
+│   ├── SYSTEM_MAP.md            # file ini
+│   └── CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md
 │
 └── tests/
-    ├── test_playSong.py       # Unit test logika inti (7 test, tanpa admin)
-    ├── test_midi.py           # Script debug manual MIDI parsing
-    ├── simulasi_play.py       # Script debug manual simulasi playback
-    ├── test.mid               # MIDI fixture test
-    ├── test_delay.mid         # MIDI fixture test delay
-    └── test_songs/            # Folder sampel file lagu
+    ├── test_playSong.py         # 7 test groups × 17 assertions
+    ├── test_midi.py
+    ├── simulasi_play.py
+    ├── test.mid, test_delay.mid
+    └── test_songs/
 ```
 
-> **Diabaikan dari tree:** `archive/`, `dist/`, `dist_nuitka/`, `__pycache__/`
+> **Diabaikan dari tree:** `dist/`, `dist_nuitka/`, `build/`, `__pycache__/`, `archive/`, `.claude/`
 
 ---
 
-## Module Map (The Chapters)
+## Core Logic Flow
 
-### `playSong_clean.py`
+### Alur Startup
+```
+main()  [playSong_clean.py]
+  ├─ load_config()                        # src.config
+  ├─ keyboard.on_press_key() × 4          # DELETE/HOME/END/INSERT (lazy import)
+  ├─ show_splash()                        # src.gui.splash — user sees splash
+  │
+  └─ (lazy) from src.gui.process_file import process_file
+     └─ process_file() loop
+         ├─ build ctx (C, S, state lists)
+         ├─ build_header(ctx)             # header + info button
+         ├─ init_folder_nav(ctx)
+         ├─ build_folder_pane(ctx)
+         ├─ init_music_logic(ctx)
+         ├─ build_music_pane(ctx)
+         ├─ build_bottom(ctx)
+         └─ root.mainloop()
+```
 
-| Fungsi/Konstanta | Baris | Peran |
+### Alur Playback (hotkey DELETE)
+```
+on_delete_press()  [playSong_clean.py]
+  └─ toggle state.is_playing, increment _play_gen
+     └─ Thread → play_next_note(gen)      # src.playback
+           ├─ if gen != _play_gen: return (stale timer guard)
+           ├─ press_letter / release_letter
+           │    └─ _safe(letter) → whitelist check
+           ├─ stored_index += 1
+           ├─ delay > 0: threading.Timer → play_next_note(gen)
+           └─ delay == 0: daemon Thread → play_next_note(gen)
+```
+
+### Alur Reload (Language toggle)
+```
+Klik 'ID' / 'EN' → set_lang(lang)
+  ├─ state.LANG = lang; save_config()
+  ├─ ctx['selected_path'][0] = '__RELOAD__'
+  └─ root.after_idle(close_window)
+       └─ process_file() return '__RELOAD__'
+            └─ main() loop continue → re-enter process_file
+```
+
+### Alur Repaint (Theme/Palette — tanpa reload)
+```
+Klik 'Dark'/'Light' atau 'Zinc'/'Slate' → set_theme/set_palette
+  ├─ state.THEME/PALETTE = new; save_config()
+  └─ repaint(ctx)                         # src.gui.repaint
+       ├─ C.clear(); C.update(THEMES[...])  # in-place (lambda bindings auto-follow)
+       ├─ ttk.Style reconfigure
+       └─ 25+ widgets .configure(bg, fg, ...)
+```
+
+---
+
+## Context Dict (`ctx`)
+
+Setelah refactor, `process_file()` tidak lagi closure raksasa. Shared state dipass via dict:
+
+| Key group | Contoh | Diisi oleh | Dipakai oleh |
+|---|---|---|---|
+| Tk objects | `root`, `C`, `S`, `style` | `process_file` | semua |
+| Widgets (25+) | `frm_top`, `btn_play`, `tree`, `folder_lb`, dll | builder functions | `repaint` |
+| State lists | `nav_folder`, `nav_stack`, `active_folder`, `music_files`, `sort_key_music` | `process_file` init | folder_nav / music_pane |
+| Tk vars | `search_var`, `speed_var` | music_pane / folder_pane | bottom |
+| Callbacks | `set_lang`, `set_theme`, `close_window`, `repaint`, `refresh_music`, `load_folder_pane`, `confirm_select` | sub-init functions | seluruh GUI |
+
+**Invariant penting:** `ctx['C']` harus dict object yang sama sepanjang sesi — di-mutate in-place oleh `repaint()` agar lambda hover bindings yang capture `C` by reference otomatis melihat warna baru.
+
+---
+
+## Key Modules
+
+| File | Fungsi utama | Peran |
 |---|---|---|
-| `LANG`, `THEME`, `PALETTE` | 42–44 | Global state bahasa, tema, palet warna aktif |
-| `is_playing`, `stored_index`, `_play_gen` | 45–49 | Global state playback + concurrency guard |
-| `folder_history` | 50 | Daftar folder yang ditambahkan user (persisten via config) |
-| `CONVERSION_CASES` | 52–55 | Mapping karakter simbol ke tombol numerik (e.g. `#` → `3`) |
-| `STRINGS` | 62–143 | Semua teks UI dalam 2 bahasa (`id`/`en`) |
-| `THEMES` | 148–197 | Dua palet warna (`celestial`/`grand_piano`) × dua mode (`dark`/`light`) |
-| `_config_path()` | 203 | Resolusi path `playSong_config.json` (mendukung frozen/exe) |
-| `load_config()` | 211 | Baca `playSong_config.json` → update global lang/theme/palette/folders |
-| `save_config()` | 228 | Tulis state saat ini ke `playSong_config.json` |
-| `is_shifted(char)` | 244 | Cek apakah karakter butuh Shift saat ditekan |
-| `press_letter(letter)` | 256 | Simulasi tekan satu karakter keyboard (handle Shift) |
-| `release_letter(letter)` | 270 | Simulasi lepas satu karakter keyboard |
-| `parse_song_file(filepath)` | 283 | MIDI/txt → list `[[timestamp, keys], ...]`; tulis temp file jika MIDI |
-| `show_splash()` | 376 | Splash screen Tkinter borderless + progress bar animasi ~2 detik |
-| `process_file()` | 437 | GUI Tkinter lengkap: folder picker, file list, speed slider; return `info_tuple` / `'__RELOAD__'` / `None` |
-| `floor_to_zero(value)` | 1145 | Helper: return `None` jika value ≤ 0 |
-| `parse_info()` | 1149 | Konversi timestamp absolut → delay relatif; handle `tempo=` marker mid-song |
-| `play_next_note(gen)` | 1174 | Playback engine rekursif: tekan tombol → jadwal note berikutnya via Timer |
-| `on_delete_press(event)` | 1214 | Hotkey DELETE: toggle play/pause, increment `_play_gen` |
-| `on_home_press(event)` | 1227 | Hotkey HOME: rewind 10 note |
-| `on_end_press(event)` | 1233 | Hotkey END: skip 10 note atau reset jika melebihi akhir |
-| `on_insert_press(event)` | 1246 | Hotkey INSERT: restart playback dari awal |
-| `main()` | 1259 | Entrypoint: `load_config` → daftar hotkeys → `show_splash` → loop `process_file` → `parse_info` → playback siap |
-
-### `tests/test_playSong.py`
-
-| Fungsi | Peran |
-|---|---|
-| Stub `keyboard` | Replace modul `keyboard` dengan dummy agar bisa jalan tanpa admin |
-| 7 fungsi `check()` | Test: `CONVERSION_CASES`, `parse_info`, generation counter, toggle play/pause, skip/reset logic, `is_shifted()` |
-
-### `tests/test_midi.py`
-
-Script satu-kali untuk debug manual: buat `test.mid` → baca → print mapping MIDI note → karakter keyboard.
-
-### `tests/simulasi_play.py`
-
-Script satu-kali untuk debug manual alur playback tanpa keyboard fisik.
-
-### `playSong_clean.spec`
-
-Konfigurasi PyInstaller: bundle `mido` (semua submodule via `collect_submodules`), `keyboard` sebagai hiddenimport, exclude library berat (numpy/pandas/matplotlib/dll), `optimize=2`, `console=False`.
+| `playSong_clean.py` | `main()`, hotkey handlers | Entry + global hotkey registration |
+| `src/constants.py` | konstanta + `APP_*` metadata | Single source of truth |
+| `src/config.py` | `load_config()`, `save_config()` | Persist LANG/THEME/PALETTE/folders |
+| `src/keyboard_sim.py` | `press_letter`, `release_letter`, `_safe()` | Keyboard sim + whitelist |
+| `src/midi_parser.py` | `parse_song_file()`, `MidoNotAvailable` | MIDI → note list |
+| `src/playback.py` | `parse_info()`, `play_next_note()` | Playback engine + gen-counter safe |
+| `src/gui/process_file.py` | `process_file()` | GUI orchestrator (lazy-loaded) |
+| `src/gui/repaint.py` | `repaint(ctx)` | Live theme/palette update |
+| `src/gui/info_popup.py` | `show_info_popup(root, C, S)` | About dialog |
 
 ---
 
 ## Data & Config
 
-**Config file:** `playSong_config.json` — dibuat otomatis di direktori yang sama dengan `playSong_clean.py` (atau direktori exe jika frozen).
+**Config file:** `playSong_config.json` di direktori exe/script.
 
-**Skema config:**
 ```json
 {
-  "lang"    : "id" | "en",
-  "theme"   : "dark" | "light",
-  "palette" : "celestial" | "grand_piano",
-  "folders" : ["path/ke/folder1", "path/ke/folder2"]
+  "lang":    "id" | "en",
+  "theme":   "dark" | "light",
+  "palette": "celestial" | "grand_piano",
+  "folders": ["C:/path/to/songs", ...]
 }
 ```
 
-**File temp runtime:** `~temp_midi_convert.txt` — dibuat sementara di direktori exe/script saat parsing MIDI, tidak dihapus setelah selesai.
+> **Label UI:** palette `celestial` → **Zinc**, `grand_piano` → **Slate** (shadcn). Nama kunci lama dipertahankan untuk kompatibilitas config.
 
-**File input lagu:**
-- `.mid` / `.midi` — diparse via `mido`, dikonversi ke format teks internal
-- `.txt` (format internal) — `<timestamp_beat>  <karakter>` per baris; prefix `~` = note_off; `tempo=<bpm>` = ubah tempo
+**Temp file runtime:** `~midi_<random>.txt` via `tempfile.mkstemp(prefix='~midi_')`, dihapus di `try/finally`.
 
-**Folder output build:**
-- `dist/` — output PyInstaller (`playSong_clean.exe` ~10 MB)
-- `dist_nuitka/` — output Nuitka (`playSong_clean.exe` ~8.5 MB)
-
-**Tidak ada database** — semua state in-memory atau di config JSON.
+**Format teks internal:** `<timestamp_beat>  <karakter>`. Prefix `~` = note_off. `tempo=<bpm>` = ubah tempo mid-song.
 
 ---
 
-## External Integrations
+## Performance (after 2026-04-23 optimization)
 
-| Library | Versi | Peran | Dipanggil di |
-|---|---|---|---|
-| `keyboard` | - | Global keyboard hook + simulasi tekan tombol | `press_letter()`, `release_letter()`, `main()` (lazy import) |
-| `mido` | - | Baca dan parse file MIDI | `parse_song_file()` (lazy import) |
-| `tkinter` | stdlib | GUI: window, widget, dialog | `show_splash()`, `process_file()` |
-| `threading` | stdlib | Timer rekursif untuk playback + daemon thread | `play_next_note()`, hotkey handlers |
-| `json` | stdlib | Baca/tulis `playSong_config.json` | `load_config()`, `save_config()` |
+Lazy-import strategy pindahkan heavy modules dari startup-path ke on-demand:
 
-**Tidak ada koneksi internet / API eksternal.**
+| Modul | Di-defer dari | Saved |
+|---|---|---|
+| `src.gui.process_file` (+ transitif) | top-level `playSong_clean.py` → `main()` | ~16 ms |
+| `tempfile` | `midi_parser` top → `_convert_midi_to_txt` | 7.4 ms |
+| `webbrowser` | `info_popup` top → click handler | 4.4 ms |
+| `tkinter.filedialog` | `folder_nav` top → `on_add_folder` | 1.4 ms |
+| `datetime` | `bottom` top → `on_tree_select` | 0.4 ms |
+| `tkinter.messagebox` | `bottom` top → error handlers | ~0.3 ms |
+
+Net: **~25–30% lebih cepat** time-to-visible-splash (Python module-load 85 ms → ~60 ms).
+
+**PyInstaller excludes (diperluas):** numpy/pandas/matplotlib/scipy/PIL/pytest/email/html/http/urllib/xml/bz2/lzma/sqlite3/argparse/logging.handlers/distutils.
+
+---
+
+## Security Posture
+
+| Attack surface | Mitigasi |
+|---|---|
+| Malicious MIDI → arbitrary keystrokes (admin privilege) | Whitelist `_ALLOWED` di `keyboard_sim._safe()` — hanya alfanumerik + symbol piano |
+| Temp file race (hardcoded name) | `tempfile.mkstemp(prefix='~midi_')` random + `try/finally` cleanup |
+| `sys.exit(1)` dari parser library | Diganti `raise MidoNotAvailable` — caller GUI yang decide |
+| URL injection via f-string | `info_popup._GITHUB_URL` hardcoded literal |
+| Config JSON trust | `isinstance(p, str)` validation di `load_config` |
 
 ---
 
@@ -204,37 +217,27 @@ Konfigurasi PyInstaller: bundle `mido` (semua submodule via `collect_submodules`
 
 | Risiko | Detail |
 |---|---|
-| **Global state tanpa lock** | `stored_index`, `is_playing`, `_play_gen` diakses dari GUI thread dan daemon thread tanpa `threading.Lock`. `_play_gen` increment berfungsi sebagai guard tetapi bukan atomic di CPython tanpa GIL (Python 3.13+). |
-| **Akurasi timer Windows** | `threading.Timer` di Windows memiliki jitter ~10–15ms. Tidak ada kompensasi drift — delay bisa akumulasi pada lagu panjang. |
-| **process_file() terlalu panjang** | Fungsi `process_file()` (~700 baris) berisi semua logika GUI termasuk nested function definitions. Sulit di-trace tanpa membaca keseluruhan. |
-| **`_scan_flat()` non-rekursif** | Fungsi `_scan_flat()` hanya scan satu level folder (non-rekursif). Navigasi ke subfolder dilakukan via folder pane, bukan scan otomatis. |
-| **Tidak ada logging ke file** | Semua output via `print()` ke stdout. Tidak ada log file — debug di exe (console=False) tidak bisa dilakukan tanpa rebuild. |
-| **`folder_history` tidak dibersihkan** | Folder yang sudah dihapus dari disk tetap tersimpan di config dan bisa muncul kembali saat reload. |
+| **Global state tanpa lock** | `state.stored_index`, `is_playing`, `_play_gen` diakses lintas-thread; guard = generation counter |
+| **Timer jitter Windows** | `threading.Timer` ±10–15 ms; tidak ada drift compensation |
+| **Reload full window (bahasa)** | Toggle bahasa close + buka window; kecil flicker. Theme/palette pakai repaint live. |
+| **`_scan_flat` non-rekursif** | Scan per-folder; subfolder via navigator bukan scan otomatis |
+| **`print()` saat `console=False`** | Debug output tidak visible di exe — perlu rebuild dengan `console=True` |
+
+---
+
+## Test Coverage
+
+`tests/test_playSong.py` — 17 assertion lintas 7 test group. Stub module `keyboard` agar test jalan tanpa admin. Import dari `src.*` setelah refactor.
+
+**Jalankan:** `PYTHONIOENCODING=utf-8 python tests/test_playSong.py`
 
 ---
 
 ## Docs Index
 
-Panduan cepat untuk semua dokumen di folder ini:
-
-| File | Untuk Siapa | Gunakan Ketika |
-|---|---|---|
-| [SYSTEM_MAP.md](SYSTEM_MAP.md) | Semua kontributor | Mulai sesi baru — kompas utama arsitektur playSong |
-| [LSH_FRONTEND_STANDARDS.md](LSH_FRONTEND_STANDARDS.md) | Tim IT LSH Group | Referensi standar lengkap clean code & AI workflow untuk proyek frontend |
-| [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Developer aktif | Cheat sheet harian — template komponen, naming, do/don't |
-| [DELEGATION_PROMPT.md](DELEGATION_PROMPT.md) | Tech lead / PM | Copy-paste prompt untuk mendelegasikan pembuatan proyek frontend baru ke AI |
-| [PROJECT_TEMPLATE.md](PROJECT_TEMPLATE.md) | Developer setup | Panduan setup proyek Next.js baru step-by-step |
-| [PORTABILITY_ANALYSIS.md](PORTABILITY_ANALYSIS.md) | Arsitek / pengambil keputusan | Mempertimbangkan adopsi struktur LSH ke stack non-React |
-| [CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md](CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md) | Semua pengguna Claude Code | Install `/token-audit` command untuk memantau konsumsi token di workspace manapun |
-
-**Hierarki dependensi docs LSH:**
-```
-LSH_FRONTEND_STANDARDS.md  ← source of truth
-    ├── QUICK_REFERENCE.md          (subset ringkas)
-    ├── DELEGATION_PROMPT.md        (template penggunaan)
-    ├── PROJECT_TEMPLATE.md         (panduan setup)
-    └── PORTABILITY_ANALYSIS.md     (analisis eksternal)
-
-SYSTEM_MAP.md               ← spesifik proyek playSong (file ini)
-CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md  ← standalone tool, independen
-```
+| File | Untuk |
+|---|---|
+| [SYSTEM_MAP.md](SYSTEM_MAP.md) | File ini — kompas arsitektur |
+| [../README.md](../README.md) | User-facing documentation |
+| [../CLAUDE.md](../CLAUDE.md) | Panduan Claude Code AI assistant |
+| [CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md](CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md) | Tool audit token (standalone) |

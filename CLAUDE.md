@@ -20,138 +20,177 @@ python playSong_clean.py
 
 **Run tests (tidak butuh admin):**
 ```bash
-python tests/test_playSong.py
-python tests/test_midi.py
+PYTHONIOENCODING=utf-8 python tests/test_playSong.py
 ```
 
 **Build ke .exe (PyInstaller — rekomendasi):**
 ```bash
-# Install pyinstaller + dependencies ke tool environment (sekali saja)
 uv tool install pyinstaller --with keyboard --with mido
-
-# Build
 %USERPROFILE%\.local\bin\pyinstaller.exe playSong_clean.spec --noconfirm
-# Output: dist/playSong_clean.exe (~10 MB, no console window)
+# Output: dist/playSong_clean.exe (~11 MB, no console window)
 ```
 
-> **Catatan build:** `keyboard` dan `mido` harus ada di environment PyInstaller. Jika lupa: `uv tool install pyinstaller --with keyboard --with mido --force`.
+**Build ke .exe (Nuitka — lebih kecil):**
 
-**Build ke .exe (Nuitka — lebih kecil & startup lebih cepat):**
-
-Nuitka mengkompilasi Python ke C native. Membutuhkan **Python 3.12** (bukan 3.13+) karena `--mingw64` tidak support Python 3.13+. Output: **~8.5 MB** vs PyInstaller ~10.3 MB.
+Membutuhkan **Python 3.12** (bukan 3.13+). Output: **~8.5 MB**.
 
 ```bash
-# Install Python 3.12 dan Nuitka (sekali saja)
 uv python install 3.12
 uv tool install nuitka --python 3.12 --with keyboard --with mido --with zstandard --force
 
-# Build (MinGW64 di-download otomatis ~100MB pertama kali)
 %USERPROFILE%\AppData\Roaming\uv\tools\nuitka\Scripts\python.exe -m nuitka ^
   --standalone --onefile --windows-console-mode=disable ^
   --enable-plugin=tk-inter --include-module=keyboard --include-package=mido ^
   --mingw64 --lto=yes --assume-yes-for-downloads ^
   --output-filename=playSong_clean.exe --output-dir=dist_nuitka playSong_clean.py
-# Output: dist_nuitka/playSong_clean.exe (~8.5 MB, no console window)
 ```
-
-> **Catatan:** Gunakan Python 3.12, bukan 3.13+. MSVC tidak diperlukan — MinGW64 (GCC 14.2) di-download otomatis oleh Nuitka.
-
-## Startup Optimizations (applied)
-
-| Teknik | Detail |
-|--------|--------|
-| **Lazy `import keyboard`** | Hanya diimport saat `press_letter()`, `release_letter()`, `main()` dipanggil — bukan saat module load |
-| **`optimize=2` di spec** | PyInstaller strip docstrings & assertions → bundle lebih kecil |
-| **`excludes` di spec** | Numpy, pandas, matplotlib, scipy, PIL, pytest, asyncio, dll tidak dibundle |
-| **`OrderedDict` tidak diimport ulang** | Dipindah ke top `process_file()`, bukan di dalam `refresh()` yang dipanggil berulang |
-
-## Skalabilitas (catatan ke depan)
-
-- **1000+ file MIDI**: `refresh()` sort + rebuild tree tiap keystroke; tambah debounce 200ms pada `search_var.trace_add` jika lag
-- **Scan folder besar**: `os.walk()` sudah lazy; untuk >10.000 file pertimbangkan background thread + progress bar
-- **MIDI besar**: `mido.merge_tracks()` load seluruh file ke memori; untuk file >50 MB pertimbangkan streaming parser
-- **Multi-lagu sekaligus**: arsitektur saat ini serial (satu lagu); paralel playback butuh refactor state menjadi class
 
 ## Architecture
 
-Proyek ini adalah **single-file monolith** (`playSong_clean.py`, ~1060 baris) dengan alur data sebagai berikut:
+Proyek di-refactor dari single-file monolith (~1400 baris) menjadi **modular package**: 18 file Python di `src/`, masing-masing ≤ 100 baris.
+
+### Struktur Modul
 
 ```
-main() → show_splash() [splash screen 2 detik]
-       → process_file() [GUI Tkinter — loop jika '__RELOAD__']
-           ↓ scan_folders() → rekursif cari .mid/.midi
-           ↓ user pilih lagu
-         parse_song_file() → mido → beat/key array
-           ↓ on_delete_press() → toggle play/pause
-         play_next_note(gen) → tekan keyboard → threading.Timer → rekursi
+playSong_clean.py            # entry: main() + 4 hotkey handlers (~100 baris)
+src/
+├── constants.py             # global state + APP_VERSION/DATE/AUTHOR
+├── strings.py               # STRINGS bilingual (id/en)
+├── themes.py                # THEMES: Zinc + Slate (dark/light) — shadcn palette
+├── config.py                # load_config / save_config (JSON)
+├── keyboard_sim.py          # press/release/is_shifted + whitelist guard
+├── midi_parser.py           # parse_song_file → raises MidoNotAvailable
+├── playback.py              # parse_info + play_next_note engine
+└── gui/
+    ├── splash.py            # splash screen (pertama render)
+    ├── widgets.py           # make_btn, make_seg_btn, rebuild_seg
+    ├── info_popup.py        # tombol ℹ popup (About/versi/hotkey)
+    ├── header.py            # title + seg controls (theme/palette/lang)
+    ├── folder_nav.py        # folder navigation logic
+    ├── folder_pane.py       # left panel widgets + speed slider
+    ├── music_pane.py        # right panel widgets + refresh/sort
+    ├── bottom.py            # bottom buttons + event bindings
+    ├── repaint.py           # live theme/palette update
+    ├── process_file.py      # GUI orchestrator (lazy-loaded dari main)
+    └── _parse_handler.py    # safe_parse() wrapper
 ```
 
-### Komponen Utama
+### Alur Data
 
-**Keyboard Simulation** — `press_letter()` / `release_letter()` / `is_shifted()`: Menangani penekanan tombol biasa dan yang butuh Shift (e.g., `!`, `@`, `#`). Mapping ada di konstanta `CONVERSION_CASES` dan `scale` (61 tuts piano).
+```
+main()
+  ├─ load_config()                 # src.config
+  ├─ keyboard.on_press_key() × 4   # DELETE/HOME/END/INSERT
+  ├─ show_splash()                 # src.gui.splash — user sees splash first
+  └─ (lazy) process_file()         # src.gui.process_file
+       └─ build ctx → builders → root.mainloop()
+           └─ user pilih lagu → parse_song_file() → play_next_note(gen)
+```
 
-**MIDI Parser** — `parse_song_file()`: Menggunakan `mido` untuk membaca file `.mid`, memetakan MIDI note ke karakter keyboard. Note di luar range 61 tuts di-fold ke oktaf terdekat. Semua track di-flatten menjadi satu sequence.
+### Context Dict (`ctx`) Pattern
 
-**Splash Screen** — `show_splash()`: Window borderless terpusat dengan animasi progress bar selama ~2 detik. Dipanggil sekali di awal `main()`. Menggunakan `THEMES[THEME]` sehingga warnanya mengikuti tema aktif.
+Karena `process_file()` dipecah ke banyak file, shared state dipass via dict `ctx` berisi:
+- Tk objects: `root`, `C` (mutable color dict), `S` (strings), `style`
+- 25+ widget references (frm_top, btn_play, tree, folder_lb, dll)
+- State lists (mutable-by-reference): `nav_folder`, `nav_stack`, `active_folder`, `music_files`
+- Tk vars: `search_var`, `speed_var`, `selected_path`
+- Callbacks: `set_lang`, `set_theme`, `set_palette`, `repaint`, `refresh_music`, `close_window`, `confirm_select`, `load_folder_pane`
 
-**GUI** — `process_file()` (~550 baris Tkinter): Picker multi-folder dengan filter real-time, sort kolom, speed slider (0.25× – 3.0×), navigasi keyboard, toggle bahasa, dan toggle tema. State folder tersimpan di `folder_history`. Mengembalikan `'__RELOAD__'` saat toggle bahasa/tema agar `main()` memanggil ulang tanpa kehilangan state.
+**Invariant:** `ctx['C']` adalah dict object yang sama sepanjang sesi — di-mutate in-place oleh `repaint()` agar lambda hover bindings yang capture `C` by reference auto-update.
 
-**Localization** — `STRINGS: dict`: Dictionary dua bahasa (`'id'` / `'en'`) berisi semua teks UI. Diakses via `STRINGS[LANG]`. Global `LANG` diubah oleh tombol 🌐 di header.
-
-**Theme** — `THEMES: dict`: Dua palette warna (`'dark'` / `'light'`). Diakses via `THEMES[THEME]`. Global `THEME` diubah oleh tombol ☀️/🌙 di header.
-
-**Playback Engine** — `play_next_note(gen)` + `parse_info()`: `parse_info()` mengkonversi timestamp absolut ke delay relatif. `play_next_note()` rekursif menjadwalkan note berikutnya via `threading.Timer(delay / playback_speed)`. Note dengan delay nol dijalankan di daemon thread.
-
-**Generation Counter** (`_play_gen`): Solusi concurrency — setiap pause/resume/reset menginkremen `_play_gen`. Timer yang stale (gen != _play_gen) langsung return, mencegah double-press.
-
-**Hotkeys** (global, via `keyboard` library):
-- `DELETE` — Play/Pause toggle
-- `HOME` — Rewind 10 note
-- `END` — Skip 10 note (atau reset jika hampir selesai)
-- `INSERT` — Restart dari awal
-
-### Global State
+### Global State (`src.constants`)
 
 ```python
-LANG            # str   — bahasa aktif: 'id' | 'en'
-THEME           # str   — tema aktif: 'dark' | 'light'
-is_playing      # bool  — apakah sedang playback
-stored_index    # int   — posisi note saat ini
-playback_speed  # float — multiplier kecepatan
-info_tuple      # (tempo, None, [[timestamp, [keys]], ...])
-_play_gen       # int   — generation counter untuk concurrency
-folder_history  # list  — folder yang ditambahkan user
+LANG            # 'id' | 'en'
+THEME           # 'dark' | 'light'
+PALETTE         # 'celestial' (Zinc) | 'grand_piano' (Slate)
+is_playing      # bool
+stored_index    # int
+playback_speed  # float
+info_tuple      # (tempo, None, [[timestamp, keys], ...])
+_play_gen       # concurrency generation counter
+folder_history  # list[str]
+APP_VERSION     # '1.0.0'
+APP_DATE        # '2026-04-21'
+APP_AUTHOR      # 'Gulpanjul'
+APP_GITHUB      # 'github.com/Gulpanjul/MidiToTyping'
 ```
 
-### Reload Mechanism (Lang/Theme Toggle)
+Pattern akses dari modul lain: `import src.constants as state; state.LANG = 'en'`.
 
-Ketika user klik toggle bahasa atau tema di header:
-1. Global `LANG` atau `THEME` diupdate
-2. `selected_path[0]` diset ke `'__RELOAD__'`
-3. Window ditutup via `_close_window()`
-4. `process_file()` return `'__RELOAD__'`
-5. `main()` loop `continue` → buka kembali `process_file()` dengan setting baru
-6. `folder_history` tetap tersimpan di global → pilihan folder tidak hilang
+### Hotkeys (global, via `keyboard` library)
+
+- `DELETE` — Play/Pause toggle
+- `HOME` — Rewind 10 note
+- `END` — Skip 10 note (atau reset jika mendekati akhir)
+- `INSERT` — Restart dari awal
+
+### Reload vs Repaint
+
+| Toggle | Mechanism | Efek |
+|---|---|---|
+| Language (ID/EN) | `'__RELOAD__'` sentinel → close+reopen window | Full re-render, folder_history tetap |
+| Theme (Dark/Light) | `repaint(ctx)` in-place | Tidak close window — live update |
+| Palette (Zinc/Slate) | `repaint(ctx)` in-place | Tidak close window — live update |
+
+## Startup Optimizations (applied 2026-04-23)
+
+Lazy-import strategy: splash muncul sebelum heavy imports di-load.
+
+| Modul | Di-defer ke | Saved |
+|---|---|---|
+| `src.gui.process_file` (+transitif) | lazy di `main()` setelah splash | ~16 ms |
+| `tempfile` | `midi_parser._convert_midi_to_txt` | 7.4 ms |
+| `webbrowser` | `info_popup` click handler | 4.4 ms |
+| `tkinter.filedialog` | `folder_nav.on_add_folder` | 1.4 ms |
+| `datetime` | `bottom.on_tree_select` | 0.4 ms |
+| `tkinter.messagebox` | error handlers | ~0.3 ms |
+
+Net: **~25–30% lebih cepat** time-to-visible-splash (Python module-load 85ms → ~60ms).
+
+## Security Mitigations
+
+| Attack surface | Mitigasi |
+|---|---|
+| Malicious MIDI → arbitrary keystrokes (app runs as admin) | Whitelist `_ALLOWED` di `keyboard_sim._safe()` |
+| Temp file race (hardcoded name) | `tempfile.mkstemp(prefix='~midi_')` random + `try/finally` |
+| `sys.exit(1)` dari parser | Diganti `raise MidoNotAvailable` — caller GUI yang decide |
+| URL injection via f-string | URL GitHub hardcoded literal di `info_popup._GITHUB_URL` |
 
 ## Testing Strategy
 
-Test di `tests/test_playSong.py` meng-stub modul `keyboard` agar bisa berjalan tanpa admin:
-```python
-keyboard_stub = types.ModuleType('keyboard')
-sys.modules['keyboard'] = keyboard_stub
-import playSong_clean  # safe import
+`tests/test_playSong.py` — 7 test groups × 17 assertions. Stub module `keyboard` agar test jalan tanpa admin. Import dari `src.*` path setelah refactor.
+
+```bash
+PYTHONIOENCODING=utf-8 python tests/test_playSong.py
 ```
 
-7 test mencakup: CONVERSION_CASES, tempo marker removal, delay calculation, generation counter, play/pause toggle, skip/reset logic, dan `is_shifted()`.
+## Skalabilitas (catatan ke depan)
+
+- **1000+ file MIDI**: `refresh_music()` sort + rebuild tree tiap keystroke; tambah debounce 200ms pada `search_var.trace_add` jika lag
+- **MIDI besar**: `mido.merge_tracks()` load seluruh file ke memori; untuk file >50 MB pertimbangkan streaming
+- **Multi-lagu paralel**: arsitektur saat ini serial; paralel butuh refactor state menjadi class
 
 ## Known Constraints
 
 - **Windows-only** — `keyboard` library hanya support Windows untuk global hook
 - **Admin required** — global keyboard hook butuh elevated privilege
 - **~10-15ms timer jitter** — akurasi `threading.Timer` di Windows
-- **61-tuts limit** — note di luar range C2–C7 di-fold, bukan dipotong
-- **Multi-channel flatten** — semua track MIDI digabung; instrumen non-piano ikut terpetakan
-- **Slow .exe startup (PyInstaller)** — single-file bundle mengekstrak ke temp setiap run (~3-5 detik normal); Nuitka jauh lebih cepat
-- **Nuitka butuh Python 3.12** — `--mingw64` tidak support Python 3.13+; gunakan `uv tool install nuitka --python 3.12 ...`
-- **console=False di spec** — exe tidak munculkan CMD window; jika butuh debug ganti ke `True`
-- **keyboard + mido wajib di env PyInstaller** — harus `uv tool install pyinstaller --with keyboard --with mido`
+- **61-tuts limit** — note di luar range C2–C7 di-fold
+- **Multi-channel flatten** — semua track MIDI digabung
+- **Slow .exe startup (PyInstaller)** — single-file bundle extract ke temp; Nuitka jauh lebih cepat
+- **Nuitka butuh Python 3.12** — `--mingw64` tidak support 3.13+
+- **`console=False`** — exe tidak munculkan CMD; `print()` tidak visible
+- **Max 100 baris per file** — aturan yang diterapkan saat refactor; preservasi untuk maintainability
+
+## Modifikasi Workflow
+
+Saat menambah fitur GUI, tambahkan state ke `ctx` bukan ke closure. Urutan build:
+1. `build_header(ctx)` → set widgets ke ctx
+2. `init_folder_nav(ctx)` → set callbacks ke ctx
+3. `build_folder_pane(ctx)` → gunakan callbacks dari ctx
+4. `init_music_logic(ctx)` + `build_music_pane(ctx)`
+5. `build_bottom(ctx)` → event bindings terakhir
+6. `repaint(ctx)` menyentuh semua widget — update saat menambah widget baru
+
+Selalu verify semua file ≤ 100 baris setelah perubahan.
