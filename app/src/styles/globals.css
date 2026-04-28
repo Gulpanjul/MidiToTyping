@@ -1,32 +1,29 @@
 @import "tailwindcss";
 
-@theme {
-  --color-bg: #09090B;
-  --color-panel: #18181B;
-  --color-accent: #FAFAFA;
-  --color-text: #FAFAFA;
-  --color-subtext: #71717A;
-  --color-border: #27272A;
-  --color-row-alt: #111113;
-  --color-sel-bg: #3F3F46;
-  --color-entry-bg: #27272A;
-  --color-btn-hov: #27272A;
-  --color-accent-hov: #D4D4D8;
+/* These :root values are the runtime-mutable theme. applyTheme() in
+   src/theme/themes.ts overwrites them when the user toggles theme/palette. */
+:root {
+  --bg: #09090B;
+  --panel: #18181B;
+  --accent: #FAFAFA;
+  --accent-hov: #D4D4D8;
+  --text: #FAFAFA;
+  --subtext: #71717A;
+  --entry-bg: #27272A;
+  --btn-hov: #27272A;
+  --row-alt: #111113;
+  --sel-bg: #3F3F46;
+  --border: #27272A;
 }
 
-:root {
-  --bg: var(--color-bg);
-  --panel: var(--color-panel);
-  --accent: var(--color-accent);
-  --text: var(--color-text);
-  --subtext: var(--color-subtext);
-  --border: var(--color-border);
-  --row-alt: var(--color-row-alt);
-  --sel-bg: var(--color-sel-bg);
-  --entry-bg: var(--color-entry-bg);
-  --btn-hov: var(--color-btn-hov);
-  --accent-hov: var(--color-accent-hov);
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-accent: var(--accent);
+  --color-text: var(--text);
+  --color-subtext: var(--subtext);
+  --color-border: var(--border);
 }
 
 html, body, #root { height: 100%; }
-body { margin: 0; }
+body { margin: 0; background: var(--bg); color: var(--text); }
