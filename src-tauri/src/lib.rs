@@ -1,3 +1,5 @@
+mod mapping;
+
 #[tauri::command]
 fn ping() -> &'static str {
     "pong"
