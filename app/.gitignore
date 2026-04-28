@@ -1,6 +1,7 @@
-# TypeScript build artifacts (composite project)
-*.tsbuildinfo
+# TypeScript composite-project build output (kept out of source tree via tsconfig.*.json outDir)
+.tsbuild/
 
-# Vite config TS->JS emissions (composite + lacks noEmit; intentional, do not commit)
+# Defense-in-depth: any stray composite emissions that escape .tsbuild/
+*.tsbuildinfo
 vite.config.js
 vite.config.d.ts
