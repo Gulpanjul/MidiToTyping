@@ -69,6 +69,60 @@ impl Injector for MockInjector {
     }
 }
 
+use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+use std::sync::Mutex as StdMutex;
+
+pub struct EnigoInjector {
+    inner: StdMutex<Enigo>,
+}
+
+impl EnigoInjector {
+    pub fn new() -> Result<Self, String> {
+        let enigo = Enigo::new(&Settings::default())
+            .map_err(|e| format!("enigo init failed: {e}"))?;
+        Ok(Self {
+            inner: StdMutex::new(enigo),
+        })
+    }
+
+    fn key_for(c: char) -> Key {
+        Key::Unicode(c)
+    }
+}
+
+impl Injector for EnigoInjector {
+    fn press(&self, key: char) {
+        if !is_allowed(key) {
+            return;
+        }
+        let mut enigo = self.inner.lock().unwrap();
+        if is_shifted(key) {
+            let base = shifted_to_base(key).unwrap_or_else(|| key.to_ascii_lowercase());
+            // Mirror Python: release base, hold shift, press base, release shift
+            let _ = enigo.key(Self::key_for(base), Direction::Release);
+            let _ = enigo.key(Key::LShift, Direction::Press);
+            let _ = enigo.key(Self::key_for(base), Direction::Press);
+            let _ = enigo.key(Key::LShift, Direction::Release);
+        } else {
+            let _ = enigo.key(Self::key_for(key), Direction::Release);
+            let _ = enigo.key(Self::key_for(key), Direction::Press);
+        }
+    }
+
+    fn release(&self, key: char) {
+        if !is_allowed(key) {
+            return;
+        }
+        let mut enigo = self.inner.lock().unwrap();
+        if is_shifted(key) {
+            let base = shifted_to_base(key).unwrap_or_else(|| key.to_ascii_lowercase());
+            let _ = enigo.key(Self::key_for(base), Direction::Release);
+        } else {
+            let _ = enigo.key(Self::key_for(key), Direction::Release);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
