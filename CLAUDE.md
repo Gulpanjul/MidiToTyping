@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Two implementations live in this repo
+
+1. **Tauri rewrite (current focus, v0.1.x)** — `app/` (Vite + React 19 + TS) and `src-tauri/` (Rust). No admin required. See [Tauri rewrite layout](#tauri-rewrite-layout) below.
+2. **Legacy Python implementation** — `playSong_clean.py` + `src/`. Preserved for reference until parity verified. Requires Administrator.
+
+When fixing bugs in **the Tauri build**, do NOT modify `playSong_clean.py` or `src/*.py`. The Python tree is reference-only.
+
 ## Project Overview
 
 **playSong** adalah aplikasi Python yang mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis, untuk digunakan pada game piano seperti *Sky: Children of the Light* dan *Piano Tiles*. Aplikasi ini membutuhkan **hak administrator Windows** karena menggunakan global keyboard hook.
@@ -213,3 +220,83 @@ Saat menambah fitur GUI, tambahkan state ke `ctx` bukan ke closure. Urutan build
 6. `repaint(ctx)` menyentuh semua widget — update saat menambah widget baru
 
 Selalu verify semua file ≤ 100 baris setelah perubahan.
+
+---
+
+## Tauri rewrite layout
+
+The Tauri rewrite (v0.1.x) lives in two new top-level directories:
+
+- `app/` — Vite + React 19 + TypeScript frontend (one window, no SSR)
+- `src-tauri/` — Tauri v2 Rust backend (MIDI parser, key injector, playback engine, hotkeys, config)
+
+The legacy Python tree is **untouched** by Tauri work — fix bugs in the rewrite, not in `src/*.py` or `playSong_clean.py`.
+
+### Tauri dev / build
+
+```bash
+cd src-tauri && cargo tauri dev    # hot-reload dev (spawns Vite, opens Tauri window)
+cd src-tauri && cargo tauri build  # production MSI in target/release/bundle/msi/
+```
+
+### Tauri tests
+
+```bash
+cd src-tauri && cargo test         # 17 unit tests (mapping/injector/midi/playback)
+cd app && npm run typecheck        # TS strict-mode check
+```
+
+### Toolchain notes (Windows dev box)
+
+- `cargo` is at `C:\Users\<user>\.cargo\bin\cargo.exe` — usually not on default PATH. PowerShell prepend: `$env:Path = "C:\Users\<user>\.cargo\bin;" + $env:Path`.
+- `npm` is at `C:\Program Files\nodejs\npm.cmd` — usually not on default PATH. PowerShell prepend nodejs dir, and call `& "C:\Program Files\nodejs\npm.cmd"` to bypass execution-policy block on `npm.ps1`.
+
+### Domain truths (never re-derive — port verbatim)
+
+These are byte-for-byte ports of the working Python app. Don't redesign:
+
+- **`_SCALE` mapping** ([src-tauri/src/mapping.rs](src-tauri/src/mapping.rs)) ← [src/midi_parser.py:7](src/midi_parser.py#L7)
+- **`_ALLOWED` whitelist** ([src-tauri/src/injector.rs](src-tauri/src/injector.rs)) ← [src/keyboard_sim.py:3-8](src/keyboard_sim.py#L3-L8)
+- **`CONVERSION_CASES` shift map** ([src-tauri/src/injector.rs `shifted_to_base`](src-tauri/src/injector.rs)) ← [src/constants.py:12-15](src/constants.py#L12-L15)
+- **Hotkey magnitudes (rewind/skip = 10 notes)** ([src-tauri/src/playback.rs `SEEK_STEP`](src-tauri/src/playback.rs)) ← [playSong_clean.py:28,40](playSong_clean.py#L28-L40)
+- **Config schema (`{lang, theme, palette, folders}`)** ([src-tauri/src/config.rs](src-tauri/src/config.rs)) ← [src/config.py](src/config.py)
+
+### Architecture (Tauri side)
+
+```
+src-tauri/src/
+├── main.rs          — thin entry, calls lib::run()
+├── lib.rs           — Tauri builder, plugin registration, command exports
+├── mapping.rs       — _SCALE table + midi_pitch_to_key()
+├── injector.rs      — Injector trait + EnigoInjector + whitelist + shift handling
+├── midi.rs          — parse_midi() via midly -> NoteSchedule
+├── playback.rs      — PlaybackEngine (Arc<Mutex>, JoinHandle::abort cancellation)
+├── config.rs        — typed wrapper over tauri-plugin-store
+├── platform.rs      — Windows timeBeginPeriod(1) + is_playback_supported()
+├── commands.rs      — 13 #[tauri::command]s + TauriSink that emits events
+└── hotkeys.rs       — register DELETE/HOME/END/INSERT via global-shortcut plugin
+```
+
+```
+app/src/
+├── App.tsx                      — Shell wrapped in providers
+├── types.ts                     — TS mirror of Rust struct shapes
+├── i18n/strings.ts              — port of src/strings.py (id + en, 45 keys)
+├── theme/themes.ts              — port of src/themes.py (4 combos × 11 keys)
+├── lib/tauri.ts                 — typed invoke/listen wrappers
+├── contexts/                    — ConfigProvider, PlaybackProvider
+├── hooks/                       — useConfig, usePlayback, useTheme
+└── components/
+    ├── ui/                      — Button, Slider, Input, Dialog (hand-rolled)
+    ├── Header.tsx               — title + 3 segmented toggles + Info button
+    ├── FolderPane.tsx           — folder list, +/- buttons, speed slider
+    ├── MusicPane.tsx            — song table with debounced search
+    ├── BottomBar.tsx            — Play/Cancel
+    ├── PlayerSheet.tsx          — Dialog with progress bar + play/pause
+    ├── InfoPopup.tsx            — About modal
+    └── UnsupportedBanner.tsx    — non-Windows guard banner
+```
+
+### Why no Administrator?
+
+The legacy Python app needs admin because the [`keyboard`](https://github.com/boppreh/keyboard) library uses a driver-style hook. The Tauri rewrite uses standard Win32 APIs (`SetWindowsHookEx WH_KEYBOARD_LL` via Tauri's plugin, `SendInput` via enigo) which run as a standard user. The MSI installer also does not show a UAC shield.

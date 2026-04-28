@@ -29,6 +29,11 @@
 
 
 
+> **🚧 Tauri rewrite (v0.1.x) is now in this repo.** A Tauri v2 + Vite +
+> React 19 + TypeScript port of playSong lives alongside the legacy
+> Python implementation. It drops the Administrator requirement and
+> targets a ~5 MB MSI. See [Tauri rewrite (v0.1.x)](#tauri-rewrite-v01x).
+
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -325,6 +330,59 @@ Project Link: [https://github.com/Gulpanjul/MidiToTyping](https://github.com/Gul
 * [Img Shields](https://shields.io)
 * [PyInstaller](https://pyinstaller.org/)
 * [Nuitka](https://nuitka.net/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+## Tauri rewrite (v0.1.x)
+
+A complete rewrite of playSong onto a modern desktop stack. **Drop-in
+replacement, smaller bundle, no Administrator required.**
+
+**Stack:** Tauri v2, Vite + React 19 + TypeScript, Rust backend
+([midly](https://crates.io/crates/midly) for MIDI, [enigo](https://crates.io/crates/enigo)
+for synthetic key injection,
+[tauri-plugin-global-shortcut](https://docs.rs/tauri-plugin-global-shortcut/)
+for hotkeys).
+
+**Layout:**
+- `app/` — Vite + React 19 + TS frontend (one window, no SSR)
+- `src-tauri/` — Tauri v2 Rust backend (MIDI parser, key injector, playback engine, hotkeys, config)
+- `playSong_clean.py` + `src/` — legacy Python implementation, preserved for reference
+
+### Develop
+
+```bash
+# one-time
+cd app && npm install
+
+# hot-reload dev
+cd src-tauri && cargo tauri dev
+```
+
+### Build
+
+```bash
+cd src-tauri && cargo tauri build
+# Output: src-tauri/target/release/bundle/msi/playSong_*.msi
+```
+
+### Why no Administrator?
+
+The legacy Python build requires admin because the
+[`keyboard`](https://github.com/boppreh/keyboard) library uses a
+driver-style hook. The Tauri rewrite uses standard Win32 APIs
+(`SetWindowsHookEx WH_KEYBOARD_LL` for global hotkeys via Tauri's
+plugin, `SendInput` via enigo for key injection) which run as a
+standard user.
+
+### Tests
+
+```bash
+cd src-tauri && cargo test    # 17 unit tests across mapping/injector/midi/playback
+cd app && npm run typecheck   # TS strict-mode check
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
