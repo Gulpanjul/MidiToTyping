@@ -13,7 +13,7 @@ export function Slider({ value, min, max, step, onChange, label }: Props) {
   const handle = (e: ChangeEvent<HTMLInputElement>) => onChange(parseFloat(e.target.value));
   return (
     <div className="flex flex-col gap-1">
-      {label && <span className="text-xs text-[var(--subtext)]">{label}</span>}
+      {label && <span className="text-[10px] text-[var(--subtext)]">{label}</span>}
       <input
         type="range"
         min={min}
@@ -21,7 +21,7 @@ export function Slider({ value, min, max, step, onChange, label }: Props) {
         step={step}
         value={value}
         onChange={handle}
-        className="w-full accent-[var(--accent)]"
+        className="ps-slider w-full"
       />
     </div>
   );

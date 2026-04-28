@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Search, Music2, FolderSearch, FileMusic } from 'lucide-react';
 import { Input } from './ui/Input';
 import { useConfig } from '../hooks/useConfig';
 import { STRINGS, fmt } from '../i18n/strings';
@@ -46,55 +47,94 @@ export function MusicPane({ folder, selectedFile, onSelectFile }: Props) {
 
   if (!folder) {
     return (
-      <section className="flex-1 flex items-center justify-center text-[var(--subtext)]">
-        {S.no_folder_selected}
+      <section className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-xs">
+          <FolderSearch size={36} className="mx-auto text-[var(--subtext)] opacity-50 mb-3" />
+          <p className="text-sm text-[var(--subtext)]">{S.no_folder_selected.trim()}</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="flex-1 flex flex-col">
+    <section className="flex-1 flex flex-col min-w-0">
       <div className="p-3 border-b border-[var(--border)] flex items-center gap-3">
-        <Input
-          placeholder="search…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="flex-1"
-        />
-        <span className="text-xs text-[var(--subtext)]">{counter}</span>
+        <div className="relative flex-1">
+          <Search
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--subtext)] pointer-events-none"
+          />
+          <Input
+            placeholder={config.lang === 'id' ? 'Cari lagu…' : 'Search songs…'}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-8 w-full"
+          />
+        </div>
+        <span className="text-[11px] font-mono text-[var(--subtext)] shrink-0 tabular-nums">
+          {counter}
+        </span>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-[var(--panel)] text-[var(--subtext)] text-xs uppercase">
-            <tr>
-              <th className="text-left px-3 py-2 w-10">{S.col_no}</th>
-              <th className="text-left px-3 py-2">{S.col_title}</th>
-              <th className="text-right px-3 py-2 w-24">{S.col_size_kb}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((f, i) => (
-              <tr
-                key={f.path}
-                onClick={() => onSelectFile(f)}
-                onDoubleClick={() => onSelectFile(f)}
-                className={`cursor-pointer ${
-                  f.path === selectedFile?.path
-                    ? 'bg-[var(--sel-bg)]'
-                    : i % 2
-                      ? 'bg-[var(--row-alt)]'
-                      : ''
-                }`}
-              >
-                <td className="px-3 py-1.5">{i + 1}</td>
-                <td className="px-3 py-1.5 truncate" title={f.name}>
-                  {f.name}
-                </td>
-                <td className="px-3 py-1.5 text-right">{(f.size / 1024).toFixed(1)} KB</td>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+            <FileMusic size={32} className="text-[var(--subtext)] opacity-40 mb-2" />
+            <p className="text-xs text-[var(--subtext)]">
+              {debounced
+                ? config.lang === 'id'
+                  ? 'Tidak ada lagu yang cocok'
+                  : 'No matching songs'
+                : config.lang === 'id'
+                  ? 'Folder kosong'
+                  : 'Folder empty'}
+            </p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-[var(--panel)]/95 backdrop-blur-sm text-[var(--subtext)] text-[10px] font-semibold uppercase tracking-wider z-10 border-b border-[var(--border)]">
+              <tr>
+                <th className="text-left px-3 py-2 w-10">{S.col_no}</th>
+                <th className="text-left px-3 py-2">{S.col_title}</th>
+                <th className="text-right px-3 py-2 w-20">{S.col_size_kb}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((f, i) => {
+                const active = f.path === selectedFile?.path;
+                return (
+                  <tr
+                    key={f.path}
+                    onClick={() => onSelectFile(f)}
+                    onDoubleClick={() => onSelectFile(f)}
+                    className={`cursor-pointer transition-colors ${
+                      active
+                        ? 'bg-[var(--accent)]/15 text-[var(--text)]'
+                        : i % 2
+                          ? 'bg-[var(--row-alt)]/50 hover:bg-[var(--btn-hov)]'
+                          : 'hover:bg-[var(--btn-hov)]'
+                    }`}
+                  >
+                    <td className="px-3 py-2 text-[11px] font-mono text-[var(--subtext)] tabular-nums">
+                      {i + 1}
+                    </td>
+                    <td className="px-3 py-2 text-xs truncate" title={f.name}>
+                      <span className="inline-flex items-center gap-2">
+                        <Music2
+                          size={12}
+                          className={`shrink-0 ${active ? 'text-[var(--accent)]' : 'text-[var(--subtext)]'}`}
+                        />
+                        <span className="truncate">{f.name}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right text-[11px] font-mono text-[var(--subtext)] tabular-nums">
+                      {(f.size / 1024).toFixed(1)} KB
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   );

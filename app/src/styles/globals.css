@@ -23,7 +23,75 @@
   --color-text: var(--text);
   --color-subtext: var(--subtext);
   --color-border: var(--border);
+
+  /* Animation keyframes used by dialog enter and accent glow. */
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-scale-in: scale-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 html, body, #root { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); }
+
+/* Custom range slider with accent thumb + soft glow on hover/drag.
+   Replaces the default browser slider for a polished gaming-app feel. */
+.ps-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--entry-bg);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.ps-slider:hover { background: var(--btn-hov); }
+
+.ps-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.ps-slider:hover::-webkit-slider-thumb,
+.ps-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.ps-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.ps-slider:hover::-moz-range-thumb,
+.ps-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.ps-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}
