@@ -1,4 +1,5 @@
 mod mapping;
+mod injector;
 
 #[tauri::command]
 fn ping() -> &'static str {
