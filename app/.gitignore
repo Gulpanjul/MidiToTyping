@@ -1,0 +1,6 @@
+# TypeScript build artifacts (composite project)
+*.tsbuildinfo
+
+# Vite config TS->JS emissions (composite + lacks noEmit; intentional, do not commit)
+vite.config.js
+vite.config.d.ts
