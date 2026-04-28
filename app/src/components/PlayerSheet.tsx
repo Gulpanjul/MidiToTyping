@@ -8,10 +8,11 @@ import { STRINGS, fmt } from '../i18n/strings';
 interface Props {
   open: boolean;
   onClose: () => void;
+  onPickAnother: () => void;
   songName: string;
 }
 
-export function PlayerSheet({ open, onClose, songName }: Props) {
+export function PlayerSheet({ open, onClose, onPickAnother, songName }: Props) {
   const { config } = useConfig();
   const { state, toggle } = usePlayback();
   const S = STRINGS[config.lang];
@@ -45,6 +46,9 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
         <div className="flex gap-2 pt-2">
           <Button onClick={() => toggle()} className="flex-1">
             {state.is_playing ? S.player_pause : S.player_play}
+          </Button>
+          <Button variant="secondary" onClick={onPickAnother}>
+            {S.player_pick}
           </Button>
           <Button variant="ghost" onClick={onClose}>
             {S.player_exit}

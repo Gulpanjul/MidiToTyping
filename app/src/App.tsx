@@ -16,7 +16,7 @@ import type { MidiFile } from './types';
 function Shell() {
   useTheme();
   const { config, ready } = useConfig();
-  const { loadSong, play } = usePlayback();
+  const { loadSong, pause } = usePlayback();
   const [folder, setFolder] = useState<string | null>(null);
   const [file, setFile] = useState<MidiFile | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
@@ -32,9 +32,8 @@ function Shell() {
 
   async function onPlay() {
     if (!file) return;
-    await loadSong(file.path);
-    await play();
-    setShowPlayer(true);
+    await loadSong(file.path); // arms engine in paused state at index 0
+    setShowPlayer(true); // user presses Play in popup or DELETE hotkey to start
   }
 
   return (
@@ -61,7 +60,14 @@ function Shell() {
       />
       <PlayerSheet
         open={showPlayer}
-        onClose={() => setShowPlayer(false)}
+        onClose={async () => {
+          await pause();
+          setShowPlayer(false);
+        }}
+        onPickAnother={async () => {
+          await pause();
+          setShowPlayer(false);
+        }}
         songName={file?.name ?? ''}
       />
     </div>
