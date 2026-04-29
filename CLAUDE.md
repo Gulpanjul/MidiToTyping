@@ -300,3 +300,16 @@ app/src/
 ### Why no Administrator?
 
 The legacy Python app needs admin because the [`keyboard`](https://github.com/boppreh/keyboard) library uses a driver-style hook. The Tauri rewrite uses standard Win32 APIs (`SetWindowsHookEx WH_KEYBOARD_LL` via Tauri's plugin, `SendInput` via enigo) which run as a standard user. The MSI installer also does not show a UAC shield.
+
+## Shared Dev Standards
+
+Standar dev lintas-project tersimpan di `~/.claude/docs/`:
+- `PROJECT_TEMPLATE.md` — struktur project standar
+- `QUICK_REFERENCE.md` — referensi cepat workflow
+- `LSH_FRONTEND_STANDARDS.md` — standar frontend
+- `DELEGATION_PROMPT.md` — pola delegasi ke subagent
+- `CLAUDE_CODE_TOKEN_AUDIT_RECIPE.md` — audit token usage
+- `PORTABILITY_ANALYSIS.md` — analisis portability
+- `frameworks/` — guideline AI-dev (docx)
+
+Project-specific docs tetap di `docs/` di repo ini.
