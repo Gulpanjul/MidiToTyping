@@ -18,8 +18,12 @@ import { onPlaybackTick } from '../lib/tauri';
 
 interface Props {
   open: boolean;
+  /** Dialog dismissal (Esc / X / backdrop). Behaves the same as "Pilih Lagu Lain": pause + close. */
   onClose: () => void;
+  /** "🎵 Pilih Lagu Lain" — pause + close popup, return to song browser. */
   onPickAnother: () => void;
+  /** "✕ Keluar" — pause + close popup + close the app window (mirrors Python main loop break). */
+  onExit: () => void;
   songName: string;
 }
 
@@ -43,7 +47,7 @@ const HOTKEY_CHIPS = [
   { key: 'INS', id: 'Restart', en: 'Restart' },
 ];
 
-export function PlayerSheet({ open, onClose, onPickAnother, songName }: Props) {
+export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: Props) {
   const { config } = useConfig();
   const { state, toggle } = usePlayback();
   const S = STRINGS[config.lang];
@@ -231,7 +235,7 @@ export function PlayerSheet({ open, onClose, onPickAnother, songName }: Props) {
             <ListMusic size={14} />
             {stripPrefix(S.player_pick)}
           </Button>
-          <Button variant="ghost" onClick={onClose} size="md" className="gap-2">
+          <Button variant="ghost" onClick={onExit} size="md" className="gap-2">
             <LogOut size={14} />
             {stripPrefix(S.player_exit)}
           </Button>

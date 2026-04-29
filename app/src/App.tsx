@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { PlaybackProvider } from './contexts/PlaybackContext';
 import { useTheme } from './hooks/useTheme';
@@ -36,11 +37,30 @@ function Shell() {
     setShowPlayer(true); // user presses Play in popup or DELETE hotkey to start
   }
 
+  // "Pilih Lagu Lain" → pause and close popup (returns user to song browser).
+  async function onPickAnother() {
+    await pause();
+    setShowPlayer(false);
+  }
+
+  // "Keluar" → pause, close popup, then close the app window. Mirrors
+  // the Python main loop where `action == 'exit'` breaks out of the
+  // outer while-loop in playSong_clean.py:79-80.
+  async function onExit() {
+    await pause();
+    setShowPlayer(false);
+    try {
+      await getCurrentWindow().close();
+    } catch {
+      // running in browser dev mode (no Tauri runtime) — ignore
+    }
+  }
+
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg)] text-[var(--text)]">
+    <div className="h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] overflow-hidden overscroll-none">
       {!supported && <UnsupportedBanner />}
       <Header />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <FolderPane
           selectedFolder={folder}
           onSelectFolder={(p) => {
@@ -50,24 +70,12 @@ function Shell() {
         />
         <MusicPane folder={folder} selectedFile={file} onSelectFile={setFile} />
       </div>
-      <BottomBar
-        selectedFile={file}
-        onPlay={onPlay}
-        onCancel={() => {
-          setFile(null);
-          setShowPlayer(false);
-        }}
-      />
+      <BottomBar selectedFile={file} onPlay={onPlay} />
       <PlayerSheet
         open={showPlayer}
-        onClose={async () => {
-          await pause();
-          setShowPlayer(false);
-        }}
-        onPickAnother={async () => {
-          await pause();
-          setShowPlayer(false);
-        }}
+        onClose={onPickAnother}
+        onPickAnother={onPickAnother}
+        onExit={onExit}
         songName={file?.name ?? ''}
       />
     </div>

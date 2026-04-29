@@ -5,7 +5,7 @@ import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { useConfig } from '../hooks/useConfig';
 import { usePlayback } from '../hooks/usePlayback';
-import { STRINGS } from '../i18n/strings';
+import { STRINGS, type StringsBundle } from '../i18n/strings';
 
 interface Props {
   selectedFolder: string | null;
@@ -16,6 +16,18 @@ interface Props {
 // since we now show a Lucide icon next to them.
 function stripPrefix(s: string): string {
   return s.replace(/^[\+\-−×✕▶⏸🎵←]\s*/, '').trim();
+}
+
+// Difficulty bands ported verbatim from src/gui/folder_pane.py:59-66.
+// Each band returns the matching {label, color} entry from the i18n bundle.
+function difficultyFor(speed: number, S: StringsBundle) {
+  if (speed <= 0.45) return S.diff_beginner;
+  if (speed <= 0.65) return S.diff_learning;
+  if (speed <= 0.85) return S.diff_relaxed;
+  if (speed <= 1.05) return S.diff_normal;
+  if (speed <= 1.5) return S.diff_advanced;
+  if (speed <= 2.25) return S.diff_pro;
+  return S.diff_master;
 }
 
 export function FolderPane({ selectedFolder, onSelectFolder }: Props) {
@@ -110,20 +122,39 @@ export function FolderPane({ selectedFolder, onSelectFolder }: Props) {
         })}
       </ul>
       <div className="p-3 border-t border-[var(--border)]">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--subtext)]">
-            <Gauge size={11} />
-            {S.speed_label}
-          </div>
-          <div className="text-xs font-mono text-[var(--accent)]">
-            {state.speed.toFixed(2)}×
-          </div>
-        </div>
-        <Slider min={0.25} max={3.0} step={0.05} value={state.speed} onChange={(v) => setSpeed(v)} />
-        <div className="flex justify-between text-[9px] text-[var(--subtext)]/70 mt-1 font-mono">
-          <span>0.25×</span>
-          <span>3.00×</span>
-        </div>
+        {(() => {
+          const diff = difficultyFor(state.speed, S);
+          return (
+            <>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--subtext)]">
+                  <Gauge size={11} />
+                  {S.speed_label}
+                </div>
+                <div className="text-xs font-mono text-[var(--accent)]">
+                  {state.speed.toFixed(2)}×
+                </div>
+              </div>
+              <div
+                className="text-center text-xs font-semibold mb-1"
+                style={{ color: diff.color }}
+              >
+                {diff.label}
+              </div>
+              <Slider
+                min={0.25}
+                max={3.0}
+                step={0.05}
+                value={state.speed}
+                onChange={(v) => setSpeed(v)}
+              />
+              <div className="flex justify-between text-[9px] text-[var(--subtext)]/70 mt-1 font-mono">
+                <span>0.25×</span>
+                <span>3.00×</span>
+              </div>
+            </>
+          );
+        })()}
       </div>
     </aside>
   );

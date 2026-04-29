@@ -40,7 +40,28 @@
 }
 
 html, body, #root { height: 100%; }
-body { margin: 0; background: var(--bg); color: var(--text); }
+html { font-size: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Scale base font up on bigger displays so the 18-30 user on a 1440p / 4K
+   monitor doesn't see microscopic text. Tailwind size utilities (text-xs,
+   text-sm, etc.) are rem-based, so bumping the html root size scales
+   everything proportionally without rewriting components. */
+@media (min-width: 1600px) {
+  html { font-size: 17px; }
+}
+@media (min-width: 2000px) {
+  html { font-size: 18px; }
+}
+@media (min-width: 2560px) {
+  html { font-size: 20px; }
+}
 
 /* Custom range slider with accent thumb + soft glow on hover/drag.
    Replaces the default browser slider for a polished gaming-app feel. */
