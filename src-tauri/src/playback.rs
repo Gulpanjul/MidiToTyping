@@ -47,10 +47,18 @@ pub struct PlaybackEngine {
     sink: Arc<dyn StateSink>,
 }
 
+/// Default starting playback speed. Set to 0.95x (5% slower than nominal)
+/// to match the perceived tempo of the legacy Python build, whose
+/// threading.Timer overshoots by 5-15ms per note on Windows. Rust's
+/// tokio + timeBeginPeriod(1) hits deadlines within ~1ms, so a Python
+/// user upgrading would otherwise feel the new build "too fast" at 1.0x
+/// even though both engines compute identical schedules.
+pub const DEFAULT_SPEED: f64 = 0.95;
+
 impl PlaybackEngine {
     pub fn new(injector: Arc<dyn Injector>, sink: Arc<dyn StateSink>) -> Self {
         let state = PlaybackState {
-            speed: 1.0,
+            speed: DEFAULT_SPEED,
             ..Default::default()
         };
         Self {

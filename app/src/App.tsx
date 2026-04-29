@@ -5,6 +5,7 @@ import { PlaybackProvider } from './contexts/PlaybackContext';
 import { useTheme } from './hooks/useTheme';
 import { useConfig } from './hooks/useConfig';
 import { usePlayback } from './hooks/usePlayback';
+import { TitleBar } from './components/TitleBar';
 import { Header } from './components/Header';
 import { FolderPane } from './components/FolderPane';
 import { MusicPane } from './components/MusicPane';
@@ -58,6 +59,7 @@ function Shell() {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] overflow-hidden overscroll-none">
+      <TitleBar />
       {!supported && <UnsupportedBanner />}
       <Header />
       <div className="flex-1 flex overflow-hidden min-h-0">
