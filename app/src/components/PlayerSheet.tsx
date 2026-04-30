@@ -8,6 +8,9 @@ import {
   Activity,
   Gauge,
   Hash,
+  Rewind,
+  FastForward,
+  RotateCcw,
 } from 'lucide-react';
 import { Dialog } from './ui/Dialog';
 import { Button } from './ui/Button';
@@ -18,7 +21,8 @@ import { onPlaybackTick } from '../lib/tauri';
 
 interface Props {
   open: boolean;
-  /** Dialog dismissal (Esc / X / backdrop). Behaves the same as "Pilih Lagu Lain": pause + close. */
+  /** Esc key dismissal. Behaves the same as "Pilih Lagu Lain": pause + close.
+   *  Backdrop click and X button are disabled (showCloseButton=false on Dialog). */
   onClose: () => void;
   /** "🎵 Pilih Lagu Lain" — pause + close popup, return to song browser. */
   onPickAnother: () => void;
@@ -30,6 +34,8 @@ interface Props {
 interface LogLine {
   index: number;
   key: string;
+  /** ms held; null while still pressed (or for keys whose release we never see) */
+  durationMs: number | null;
 }
 
 const MAX_LOG_LINES = 200;
@@ -49,24 +55,56 @@ const HOTKEY_CHIPS = [
 
 export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: Props) {
   const { config } = useConfig();
-  const { state, toggle } = usePlayback();
+  const { state, toggle, seek, restart } = usePlayback();
   const S = STRINGS[config.lang];
   const lang = config.lang;
   const [log, setLog] = useState<LogLine[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  // Subscribe to playback:tick events while popup is open.
-  // Mirrors src/playback.py:52 -- print(f'{delay}s  {keys}') for each press.
-  // Releases (~prefix) are filtered out to match Python's "if '~' not in keys".
+  // Subscribe to playback:tick events while popup is open. Each press event
+  // is logged with start timestamp; the matching release event (~prefix) fills
+  // in durationMs for the most recent unreleased press of that key.
   useEffect(() => {
     if (!open) return;
     setLog([]);
+    // Keep press timestamps keyed by char so we can compute hold duration
+    // when the matching release tick arrives. Map<key, [startMs...]> = stack
+    // (some MIDIs press the same key in overlap before releasing).
+    const pressStarts = new Map<string, number[]>();
     let unsub: (() => void) | undefined;
     (async () => {
       unsub = await onPlaybackTick(({ index, key }) => {
-        if (key.startsWith('~')) return;
+        const now = performance.now();
+        if (key.startsWith('~')) {
+          // release event: pop the most recent press start for each char,
+          // patch the corresponding log line with the duration.
+          for (const ch of key.slice(1)) {
+            const stack = pressStarts.get(ch);
+            if (!stack || stack.length === 0) continue;
+            const start = stack.pop()!;
+            const ms = Math.round(now - start);
+            setLog((prev) => {
+              // Find the latest unresolved press line for this char and patch it.
+              for (let i = prev.length - 1; i >= 0; i--) {
+                if (prev[i].key.includes(ch) && prev[i].durationMs === null) {
+                  const next = prev.slice();
+                  next[i] = { ...next[i], durationMs: ms };
+                  return next;
+                }
+              }
+              return prev;
+            });
+          }
+          return;
+        }
+        // press event: stamp start time for each char in the chord.
+        for (const ch of key) {
+          const stack = pressStarts.get(ch) ?? [];
+          stack.push(now);
+          pressStarts.set(ch, stack);
+        }
         setLog((prev) => {
-          const next = [...prev, { index, key }];
+          const next = [...prev, { index, key, durationMs: null }];
           return next.length > MAX_LOG_LINES ? next.slice(-MAX_LOG_LINES) : next;
         });
       });
@@ -98,7 +136,7 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
   const progress = state.total ? (state.index / state.total) * 100 : 0;
 
   return (
-    <Dialog open={open} onClose={onClose} title={S.player_title} size="lg">
+    <Dialog open={open} onClose={onClose} title={S.player_title} size="lg" showCloseButton={false}>
       <div className="space-y-4">
         {/* Now-playing card */}
         <div
@@ -185,14 +223,23 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
                     : 'Press Play or DELETE hotkey to start'}
               </div>
             ) : (
-              log.map((line, i) => (
-                <div key={`${line.index}-${i}`} className="whitespace-pre tabular-nums">
-                  <span className="text-[var(--subtext)]">
-                    {String(line.index + 1).padStart(5, ' ')}
-                  </span>
-                  <span className="text-[var(--accent)]">  {line.key}</span>
-                </div>
-              ))
+              log.map((line, i) => {
+                const durStr =
+                  line.durationMs === null
+                    ? '   ···'
+                    : line.durationMs < 1000
+                      ? `${String(line.durationMs).padStart(4, ' ')}ms`
+                      : `${(line.durationMs / 1000).toFixed(2)}s `;
+                return (
+                  <div key={`${line.index}-${i}`} className="whitespace-pre tabular-nums">
+                    <span className="text-[var(--subtext)]">
+                      {String(line.index + 1).padStart(5, ' ')}
+                    </span>
+                    <span className="text-[var(--accent)]">  {line.key}</span>
+                    <span className="text-[var(--subtext)]">  {durStr}</span>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -212,7 +259,8 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
           ))}
         </div>
 
-        {/* Action buttons */}
+        {/* Transport row — Play/Pause + rewind/skip/restart for keyboards
+            without HOME/END/INSERT keys (e.g. 65% / TKL-no-nav / laptops). */}
         <div className="flex gap-2 pt-1">
           <Button
             onClick={() => toggle()}
@@ -231,11 +279,47 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
               </>
             )}
           </Button>
-          <Button variant="secondary" onClick={onPickAnother} size="md" className="gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => seek(-10)}
+            aria-label={lang === 'id' ? 'Mundur 10 nada (HOME)' : 'Rewind 10 notes (HOME)'}
+            title={lang === 'id' ? 'Mundur 10 nada (HOME)' : 'Rewind 10 notes (HOME)'}
+            className="gap-1.5 px-3"
+          >
+            <Rewind size={14} fill="currentColor" />
+            <span className="font-mono text-[11px]">−10</span>
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => seek(10)}
+            aria-label={lang === 'id' ? 'Maju 10 nada (END)' : 'Skip 10 notes (END)'}
+            title={lang === 'id' ? 'Maju 10 nada (END)' : 'Skip 10 notes (END)'}
+            className="gap-1.5 px-3"
+          >
+            <span className="font-mono text-[11px]">+10</span>
+            <FastForward size={14} fill="currentColor" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => restart()}
+            aria-label={lang === 'id' ? 'Mulai ulang (INSERT)' : 'Restart (INSERT)'}
+            title={lang === 'id' ? 'Mulai ulang (INSERT)' : 'Restart (INSERT)'}
+            className="gap-1.5 px-3"
+          >
+            <RotateCcw size={14} />
+          </Button>
+        </div>
+
+        {/* Navigation row — pick another / exit app */}
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onPickAnother} size="md" className="flex-1 gap-2">
             <ListMusic size={14} />
             {stripPrefix(S.player_pick)}
           </Button>
-          <Button variant="ghost" onClick={onExit} size="md" className="gap-2">
+          <Button variant="ghost" onClick={onExit} size="md" className="flex-1 gap-2">
             <LogOut size={14} />
             {stripPrefix(S.player_exit)}
           </Button>

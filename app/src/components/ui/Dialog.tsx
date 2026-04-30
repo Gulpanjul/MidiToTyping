@@ -34,10 +34,13 @@ export function Dialog({
   }, [open, onClose]);
 
   if (!open) return null;
+  // When showCloseButton is false, treat the dialog as modal-only: clicks on
+  // the backdrop don't close it. The caller is responsible for providing
+  // explicit close buttons in the body (PlayerSheet uses Pilih Lagu Lain / Keluar).
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+      onClick={showCloseButton ? onClose : undefined}
     >
       <div
         className={`relative bg-[var(--panel)] text-[var(--text)] rounded-xl shadow-2xl border border-[var(--border)] p-6 animate-scale-in ${sizeClass[size]}`}
