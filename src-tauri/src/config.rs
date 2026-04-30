@@ -1,4 +1,4 @@
-//! Persistent config. Schema mirrors src/config.py:32-40.
+//! Persistent config. Schema mirrors legacy/src/config.py:32-40.
 //! Stored at <app-data>/playSong_config.json via tauri-plugin-store.
 
 use serde::{Deserialize, Serialize};

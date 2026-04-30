@@ -1,9 +1,9 @@
 //! Keyboard injection abstraction. Whitelist + shift map ported verbatim
-//! from src/keyboard_sim.py and src/constants.py CONVERSION_CASES.
+//! from legacy/src/keyboard_sim.py and legacy/src/constants.py CONVERSION_CASES.
 
 use std::sync::Mutex;
 
-/// Verbatim from src/keyboard_sim.py:3-8
+/// Verbatim from legacy/src/keyboard_sim.py:3-8
 pub const ALLOWED: &str = concat!(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
     "0123456789",
@@ -15,7 +15,7 @@ pub fn is_allowed(c: char) -> bool {
     ALLOWED.contains(c)
 }
 
-/// Verbatim from src/keyboard_sim.py:11-15
+/// Verbatim from legacy/src/keyboard_sim.py:11-15
 pub fn is_shifted(c: char) -> bool {
     let v = c as u32;
     if (65..=90).contains(&v) {
@@ -24,7 +24,7 @@ pub fn is_shifted(c: char) -> bool {
     "!@#$%^&*()_+{}|:\"<>?".contains(c)
 }
 
-/// Verbatim from src/constants.py:12-15. Maps shifted-symbol -> base key.
+/// Verbatim from legacy/src/constants.py:12-15. Maps shifted-symbol -> base key.
 pub fn shifted_to_base(c: char) -> Option<char> {
     Some(match c {
         '!' => '1',

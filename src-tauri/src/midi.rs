@@ -1,5 +1,5 @@
-//! MIDI parsing via `midly`. Output mirrors src/midi_parser.py +
-//! src/playback.py:parse_info -- events carry per-note delays in seconds
+//! MIDI parsing via `midly`. Output mirrors legacy/src/midi_parser.py +
+//! legacy/src/playback.py:parse_info -- events carry per-note delays in seconds
 //! at 1.0x speed, ready for the playback engine to scale by speed.
 
 use crate::mapping::midi_pitch_to_key;

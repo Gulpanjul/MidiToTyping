@@ -46,7 +46,7 @@ function Shell() {
 
   // "Keluar" → pause, close popup, then close the app window. Mirrors
   // the Python main loop where `action == 'exit'` breaks out of the
-  // outer while-loop in playSong_clean.py:79-80.
+  // outer while-loop in legacy/playSong_clean.py:79-80.
   async function onExit() {
     await pause();
     setShowPlayer(false);

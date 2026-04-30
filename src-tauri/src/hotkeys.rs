@@ -1,4 +1,4 @@
-//! Global hotkeys (Windows-only at v1). Mirrors playSong_clean.py:15-50.
+//! Global hotkeys (Windows-only at v1). Mirrors legacy/playSong_clean.py:15-50.
 
 use crate::commands::AppState;
 use tauri::{AppHandle, Emitter, Manager, Runtime};

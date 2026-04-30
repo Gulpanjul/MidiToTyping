@@ -132,7 +132,7 @@ impl PlaybackEngine {
             let total = s.total as i64;
             let new_idx = s.index as i64 + delta;
             if delta > 0 && new_idx >= total {
-                // Skip past end: reset + pause (mirrors playSong_clean.py:on_end_press)
+                // Skip past end: reset + pause (mirrors legacy/playSong_clean.py:on_end_press)
                 s.index = 0;
                 s.is_playing = false;
                 self.sink.emit_state(&s);

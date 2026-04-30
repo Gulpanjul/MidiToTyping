@@ -1,4 +1,4 @@
-//! MIDI pitch -> typing-key mapping. Verbatim port of src/midi_parser.py:7
+//! MIDI pitch -> typing-key mapping. Verbatim port of legacy/src/midi_parser.py:7
 //! and the wrap rule on lines 33-34.
 
 pub const SCALE: &str = "1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm";
