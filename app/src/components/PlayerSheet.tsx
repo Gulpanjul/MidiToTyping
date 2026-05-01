@@ -30,6 +30,8 @@ interface LogLine {
   key: string;
   /** ms held; null while still pressed (or for keys whose release we never see) */
   durationMs: number | null;
+  /** performance.now() at press — needed to compute durationMs on release. */
+  startMs: number;
 }
 
 const MAX_LOG_LINES = 200;
@@ -52,68 +54,89 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
   const { state, toggle, seek, restart } = usePlayback();
   const S = STRINGS[config.lang];
   const lang = config.lang;
-  const [log, setLog] = useState<LogLine[]>([]);
+  // Log lines live in a mutable ref so press/release events run in O(1) without
+  // queueing a setState per tick. Re-renders are coalesced to one per animation
+  // frame via `logTick`, so dense MIDIs (50+ notes/sec) no longer back up the
+  // React render queue and the duration `ms` updates are visible immediately.
+  const linesRef = useRef<LogLine[]>([]);
+  // Stack-per-character of LogLine *references* — release events pop the line
+  // they refer to and mutate `durationMs` directly, so there's no array scan.
+  const pressStacksRef = useRef(new Map<string, LogLine[]>());
+  const flushScheduledRef = useRef(false);
+  const [logTick, setLogTick] = useState(0);
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  // Subscribe to playback:tick events while popup is open. Each press event
-  // is logged with start timestamp; the matching release event (~prefix) fills
-  // in durationMs for the most recent unreleased press of that key.
   useEffect(() => {
-    if (!open) return;
-    setLog([]);
-    // Keep press timestamps keyed by char so we can compute hold duration
-    // when the matching release tick arrives. Map<key, [startMs...]> = stack
-    // (some MIDIs press the same key in overlap before releasing).
-    const pressStarts = new Map<string, number[]>();
+    if (!open) {
+      // Reset on close so the next song starts with a clean slate.
+      linesRef.current = [];
+      pressStacksRef.current.clear();
+      return;
+    }
+    linesRef.current = [];
+    pressStacksRef.current.clear();
+    setLogTick((t) => t + 1);
+
     let unsub: (() => void) | undefined;
+    let cancelled = false;
+
+    const requestFlush = () => {
+      if (flushScheduledRef.current) return;
+      flushScheduledRef.current = true;
+      requestAnimationFrame(() => {
+        flushScheduledRef.current = false;
+        if (!cancelled) setLogTick((t) => t + 1);
+      });
+    };
+
     (async () => {
       unsub = await onPlaybackTick(({ index, key }) => {
         const now = performance.now();
         if (key.startsWith('~')) {
-          // release event: pop the most recent press start for each char,
-          // patch the corresponding log line with the duration.
+          // Release: pop the most recent unresolved press line per char and
+          // patch durationMs in place. No array scan, no setState.
           for (const ch of key.slice(1)) {
-            const stack = pressStarts.get(ch);
+            const stack = pressStacksRef.current.get(ch);
             if (!stack || stack.length === 0) continue;
-            const start = stack.pop()!;
-            const ms = Math.round(now - start);
-            setLog((prev) => {
-              // Find the latest unresolved press line for this char and patch it.
-              for (let i = prev.length - 1; i >= 0; i--) {
-                if (prev[i].key.includes(ch) && prev[i].durationMs === null) {
-                  const next = prev.slice();
-                  next[i] = { ...next[i], durationMs: ms };
-                  return next;
-                }
-              }
-              return prev;
-            });
+            const line = stack.pop()!;
+            if (line.durationMs === null) {
+              line.durationMs = Math.round(now - line.startMs);
+            }
           }
+          requestFlush();
           return;
         }
-        // press event: stamp start time for each char in the chord.
-        for (const ch of key) {
-          const stack = pressStarts.get(ch) ?? [];
-          stack.push(now);
-          pressStarts.set(ch, stack);
+        // Press: append a new line, push its reference onto each chord
+        // char's stack so the matching release is O(1).
+        const line: LogLine = { index, key, durationMs: null, startMs: now };
+        linesRef.current.push(line);
+        if (linesRef.current.length > MAX_LOG_LINES) {
+          linesRef.current.splice(0, linesRef.current.length - MAX_LOG_LINES);
         }
-        setLog((prev) => {
-          const next = [...prev, { index, key, durationMs: null }];
-          return next.length > MAX_LOG_LINES ? next.slice(-MAX_LOG_LINES) : next;
-        });
+        for (const ch of key) {
+          let stack = pressStacksRef.current.get(ch);
+          if (!stack) {
+            stack = [];
+            pressStacksRef.current.set(ch, stack);
+          }
+          stack.push(line);
+        }
+        requestFlush();
       });
     })();
+
     return () => {
+      cancelled = true;
       unsub?.();
     };
   }, [open]);
 
-  // Auto-scroll log to bottom on new entries.
+  // Auto-scroll log to bottom whenever a flush ran.
   useEffect(() => {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-  }, [log]);
+  }, [logTick]);
 
   useEffect(() => {
     if (!open) return;
@@ -206,7 +229,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             ref={logRef}
             className="h-44 bg-[var(--bg)]/60 rounded-md p-2.5 overflow-y-auto font-mono text-[11px] text-[var(--text)] border border-[var(--border)] leading-relaxed"
           >
-            {log.length === 0 ? (
+            {linesRef.current.length === 0 ? (
               <div className="text-[var(--subtext)] italic">
                 {state.is_playing
                   ? lang === 'id'
@@ -217,7 +240,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
                     : 'Press Play or DELETE hotkey to start'}
               </div>
             ) : (
-              log.map((line, i) => {
+              linesRef.current.map((line, i) => {
                 const durStr =
                   line.durationMs === null
                     ? '   ···'
