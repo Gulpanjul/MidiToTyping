@@ -205,10 +205,15 @@ impl PlaybackEngine {
                 }
                 sink.emit_tick(idx, &event.keys);
 
+                // We deliberately do NOT emit_state here. The renderer
+                // already learns about the advancing index from the tick
+                // event payload (which carries `index`). Emitting state
+                // every note caused 50+ context-wide React re-renders/sec
+                // on dense MIDIs. State emits stay reserved for transitions
+                // (load / play / pause / seek / restart / done).
                 {
                     let mut s = state.lock().await;
                     s.index += 1;
-                    sink.emit_state(&s);
                 }
                 let delay = (event.delay_secs / speed).max(0.0);
                 if delay > 0.0 {

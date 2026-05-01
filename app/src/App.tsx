@@ -3,7 +3,7 @@ import { ConfigProvider } from './contexts/ConfigContext';
 import { PlaybackProvider } from './contexts/PlaybackContext';
 import { useTheme } from './hooks/useTheme';
 import { useConfig } from './hooks/useConfig';
-import { usePlayback } from './hooks/usePlayback';
+import { usePlaybackActions } from './hooks/usePlayback';
 import { TitleBar } from './components/TitleBar';
 import { Header } from './components/Header';
 import { FolderPane } from './components/FolderPane';
@@ -24,7 +24,7 @@ const PlayerSheet = lazy(() =>
 function Shell() {
   useTheme();
   const { config, ready } = useConfig();
-  const { loadSong, pause } = usePlayback();
+  const { loadSong, pause } = usePlaybackActions();
   const [folder, setFolder] = useState<string | null>(null);
   const [file, setFile] = useState<MidiFile | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);

@@ -13,7 +13,7 @@ import {
 import { Dialog } from './ui/Dialog';
 import { Button } from './ui/Button';
 import { useConfig } from '../hooks/useConfig';
-import { usePlayback } from '../hooks/usePlayback';
+import { usePlaybackActions, usePlaybackState } from '../hooks/usePlayback';
 import { STRINGS } from '../i18n/strings';
 import { onPlaybackTick } from '../lib/tauri';
 
@@ -51,7 +51,8 @@ const HOTKEY_CHIPS = [
 
 export function PlayerSheet({ open, onClose, songName }: Props) {
   const { config } = useConfig();
-  const { state, toggle, seek, restart } = usePlayback();
+  const state = usePlaybackState();
+  const { toggle, seek, restart } = usePlaybackActions();
   const S = STRINGS[config.lang];
   const lang = config.lang;
   // Log lines live in a mutable ref so press/release events run in O(1) without

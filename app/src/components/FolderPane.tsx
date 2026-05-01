@@ -4,7 +4,7 @@ import { FolderPlus, FolderMinus, Folder, FolderOpen, Gauge } from 'lucide-react
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { useConfig } from '../hooks/useConfig';
-import { usePlayback } from '../hooks/usePlayback';
+import { usePlaybackActions, usePlaybackState } from '../hooks/usePlayback';
 import { STRINGS, type StringsBundle } from '../i18n/strings';
 
 interface Props {
@@ -32,7 +32,8 @@ function difficultyFor(speed: number, S: StringsBundle) {
 
 export function FolderPane({ selectedFolder, onSelectFolder }: Props) {
   const { config, setConfig } = useConfig();
-  const { state, setSpeed } = usePlayback();
+  const state = usePlaybackState();
+  const { setSpeed } = usePlaybackActions();
   const S = STRINGS[config.lang];
   const [busy, setBusy] = useState(false);
 
