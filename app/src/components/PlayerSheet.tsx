@@ -12,10 +12,13 @@ import {
 } from 'lucide-react';
 import { Dialog } from './ui/Dialog';
 import { Button } from './ui/Button';
+import { Slider } from './ui/Slider';
+import { MarqueeText } from './ui/MarqueeText';
 import { useConfig } from '../hooks/useConfig';
 import { usePlaybackActions, usePlaybackState } from '../hooks/usePlayback';
 import { STRINGS } from '../i18n/strings';
 import { onPlaybackTick } from '../lib/tauri';
+import { difficultyFor } from '../lib/difficulty';
 
 interface Props {
   open: boolean;
@@ -52,7 +55,7 @@ const HOTKEY_CHIPS = [
 export function PlayerSheet({ open, onClose, songName }: Props) {
   const { config } = useConfig();
   const state = usePlaybackState();
-  const { toggle, seek, restart } = usePlaybackActions();
+  const { toggle, seek, restart, setSpeed } = usePlaybackActions();
   const S = STRINGS[config.lang];
   const lang = config.lang;
   // Log lines live in a mutable ref so press/release events run in O(1) without
@@ -183,13 +186,14 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
                   ? 'Siap Dimainkan'
                   : 'Ready to Play'}
             </div>
-            <div className="text-sm font-medium truncate mt-0.5" title={songName}>
-              {songName || '—'}
-            </div>
+            <MarqueeText
+              text={songName || '—'}
+              className="text-sm font-medium mt-0.5"
+            />
           </div>
         </div>
 
-        {/* Stats row */}
+        {/* Stats row — speed moved into the dedicated control block below. */}
         <div className="flex items-center gap-4 text-[11px]">
           <div className="flex items-center gap-1.5 text-[var(--subtext)]">
             <Hash size={11} />
@@ -198,12 +202,6 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             </span>
             <span>/</span>
             <span className="font-mono tabular-nums">{state.total}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[var(--subtext)]">
-            <Gauge size={11} />
-            <span className="font-mono tabular-nums text-[var(--text)]">
-              {state.speed.toFixed(2)}×
-            </span>
           </div>
           <div className="ml-auto font-mono tabular-nums text-[var(--subtext)]">
             {progress.toFixed(0)}%
@@ -219,6 +217,45 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             style={{ width: `${progress}%` }}
           />
         </div>
+
+        {/* Speed control — same range/step as the sidebar slider, kept in
+            sync via the shared playback context. Difficulty label mirrors
+            FolderPane so users get consistent feedback wherever they adjust. */}
+        {(() => {
+          const diff = difficultyFor(state.speed, S);
+          return (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--subtext)]">
+                  <Gauge size={11} />
+                  {S.speed_label}
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span
+                    className="font-semibold"
+                    style={{ color: diff.color }}
+                  >
+                    {diff.label}
+                  </span>
+                  <span className="font-mono text-[var(--accent)] tabular-nums">
+                    {state.speed.toFixed(2)}×
+                  </span>
+                </div>
+              </div>
+              <Slider
+                min={0.25}
+                max={3.0}
+                step={0.05}
+                value={state.speed}
+                onChange={(v) => setSpeed(v)}
+              />
+              <div className="flex justify-between text-[9px] text-[var(--subtext)]/70 mt-0.5 font-mono">
+                <span>0.25×</span>
+                <span>3.00×</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Note log */}
         <div>

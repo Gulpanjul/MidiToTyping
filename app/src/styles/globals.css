@@ -55,6 +55,21 @@
   animation: splash-pulse 1100ms ease-in-out infinite;
 }
 
+/* Marquee: sweeps right then back, with a brief hold at each end. The end
+   offset is supplied per-instance via --marquee-shift so the animation
+   only travels the exact overflow distance — no wrap-around, no clones. */
+@keyframes marquee {
+  0%, 8%    { transform: translateX(0); }
+  45%, 55%  { transform: translateX(var(--marquee-shift, 0)); }
+  92%, 100% { transform: translateX(0); }
+}
+.animate-marquee {
+  animation-name: marquee;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  /* animation-duration is supplied inline by the React component. */
+}
+
 html, body, #root { height: 100%; }
 html { font-size: 16px; }
 body {

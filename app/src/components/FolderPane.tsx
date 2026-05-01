@@ -5,7 +5,8 @@ import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { useConfig } from '../hooks/useConfig';
 import { usePlaybackActions, usePlaybackState } from '../hooks/usePlayback';
-import { STRINGS, type StringsBundle } from '../i18n/strings';
+import { STRINGS } from '../i18n/strings';
+import { difficultyFor } from '../lib/difficulty';
 
 interface Props {
   selectedFolder: string | null;
@@ -16,18 +17,6 @@ interface Props {
 // since we now show a Lucide icon next to them.
 function stripPrefix(s: string): string {
   return s.replace(/^[\+\-−×✕▶⏸🎵←]\s*/, '').trim();
-}
-
-// Difficulty bands ported verbatim from src/gui/folder_pane.py:59-66.
-// Each band returns the matching {label, color} entry from the i18n bundle.
-function difficultyFor(speed: number, S: StringsBundle) {
-  if (speed <= 0.45) return S.diff_beginner;
-  if (speed <= 0.65) return S.diff_learning;
-  if (speed <= 0.85) return S.diff_relaxed;
-  if (speed <= 1.05) return S.diff_normal;
-  if (speed <= 1.5) return S.diff_advanced;
-  if (speed <= 2.25) return S.diff_pro;
-  return S.diff_master;
 }
 
 export function FolderPane({ selectedFolder, onSelectFolder }: Props) {
