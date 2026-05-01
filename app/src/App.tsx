@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { PlaybackProvider } from './contexts/PlaybackContext';
 import { useTheme } from './hooks/useTheme';
@@ -9,11 +9,17 @@ import { Header } from './components/Header';
 import { FolderPane } from './components/FolderPane';
 import { MusicPane } from './components/MusicPane';
 import { BottomBar } from './components/BottomBar';
-import { PlayerSheet } from './components/PlayerSheet';
 import { Splash } from './components/Splash';
 import { UnsupportedBanner } from './components/UnsupportedBanner';
 import { api } from './lib/tauri';
 import type { MidiFile } from './types';
+
+// PlayerSheet pulls in lucide icons + tick-event subscription logic that's
+// only needed once the user actually starts a song. Lazy-loading keeps the
+// initial bundle (and thus splash → first-paint) lean.
+const PlayerSheet = lazy(() =>
+  import('./components/PlayerSheet').then((m) => ({ default: m.PlayerSheet }))
+);
 
 function Shell() {
   useTheme();
@@ -69,11 +75,18 @@ function Shell() {
         />
       </div>
       <BottomBar selectedFile={file} onPlay={() => onPlay()} />
-      <PlayerSheet
-        open={showPlayer}
-        onClose={onClosePlayer}
-        songName={file?.name ?? ''}
-      />
+      {/* PlayerSheet is lazy: render only when armed so the chunk isn't
+          fetched until the user actually launches a song. Suspense fallback
+          is null because the dialog itself is the visible UI. */}
+      {showPlayer && (
+        <Suspense fallback={null}>
+          <PlayerSheet
+            open={showPlayer}
+            onClose={onClosePlayer}
+            songName={file?.name ?? ''}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,9 +1,14 @@
-import { useState, type ReactNode } from 'react';
+import { Suspense, lazy, useState, type ReactNode } from 'react';
 import { Music4, Moon, Sun, Info } from 'lucide-react';
 import { useConfig } from '../hooks/useConfig';
 import { STRINGS } from '../i18n/strings';
-import { InfoPopup } from './InfoPopup';
 import type { Lang, Palette, Theme } from '../types';
+
+// InfoPopup is a static "About" dialog — no need to ship it in the initial
+// bundle. Loaded the first time the user clicks the Info icon.
+const InfoPopup = lazy(() =>
+  import('./InfoPopup').then((m) => ({ default: m.InfoPopup }))
+);
 
 export function Header() {
   const { config, setConfig } = useConfig();
@@ -59,7 +64,11 @@ export function Header() {
           <Info size={15} />
         </button>
       </div>
-      <InfoPopup open={showInfo} onClose={() => setShowInfo(false)} />
+      {showInfo && (
+        <Suspense fallback={null}>
+          <InfoPopup open={showInfo} onClose={() => setShowInfo(false)} />
+        </Suspense>
+      )}
     </header>
   );
 }
