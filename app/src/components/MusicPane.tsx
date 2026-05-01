@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Music2, FolderSearch, FileMusic } from 'lucide-react';
 import { Input } from './ui/Input';
 import { useConfig } from '../hooks/useConfig';
@@ -10,9 +10,13 @@ interface Props {
   folder: string | null;
   selectedFile: MidiFile | null;
   onSelectFile: (f: MidiFile) => void;
+  /** Triggered by Enter key or double-click on a row — selects + plays. */
+  onPlayFile: (f: MidiFile) => void;
+  /** Suppress arrow/Enter capture (e.g. when player popup is open). */
+  disableNav?: boolean;
 }
 
-export function MusicPane({ folder, selectedFile, onSelectFile }: Props) {
+export function MusicPane({ folder, selectedFile, onSelectFile, onPlayFile, disableNav }: Props) {
   const { config } = useConfig();
   const S = STRINGS[config.lang];
   const [files, setFiles] = useState<MidiFile[]>([]);
@@ -40,6 +44,55 @@ export function MusicPane({ folder, selectedFile, onSelectFile }: Props) {
     const q = debounced.toLowerCase();
     return files.filter((f) => f.name.toLowerCase().includes(q));
   }, [files, debounced]);
+
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
+  // Keyboard navigation: ArrowUp/Down moves the selected song,
+  // Enter triggers playback. We listen at window level but bail out when
+  // the user is typing in an input/textarea (e.g. the search box).
+  useEffect(() => {
+    if (disableNav || !folder || filtered.length === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping =
+        tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable === true;
+      // Allow Enter from the search input to play the highlighted row,
+      // but ignore arrow keys (caret movement should stay native there).
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (isTyping) return;
+        e.preventDefault();
+        const idx = selectedFile
+          ? filtered.findIndex((f) => f.path === selectedFile.path)
+          : -1;
+        let next: number;
+        if (idx === -1) {
+          next = e.key === 'ArrowDown' ? 0 : filtered.length - 1;
+        } else {
+          next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+          if (next < 0) next = 0;
+          if (next >= filtered.length) next = filtered.length - 1;
+        }
+        const target = filtered[next];
+        if (target && target.path !== selectedFile?.path) onSelectFile(target);
+      } else if (e.key === 'Enter') {
+        if (!selectedFile) return;
+        // Don't steal Enter from buttons / non-search controls.
+        if (isTyping && tag !== 'INPUT') return;
+        e.preventDefault();
+        onPlayFile(selectedFile);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [disableNav, folder, filtered, selectedFile, onSelectFile, onPlayFile]);
+
+  // Scroll the selected row into view when selection changes via keyboard.
+  useEffect(() => {
+    if (!selectedFile) return;
+    const row = rowRefs.current.get(selectedFile.path);
+    row?.scrollIntoView({ block: 'nearest' });
+  }, [selectedFile]);
 
   const counter = debounced
     ? fmt(S.file_count_fmt, { shown: filtered.length, total: files.length })
@@ -104,8 +157,12 @@ export function MusicPane({ folder, selectedFile, onSelectFile }: Props) {
                 return (
                   <tr
                     key={f.path}
+                    ref={(el) => {
+                      if (el) rowRefs.current.set(f.path, el);
+                      else rowRefs.current.delete(f.path);
+                    }}
                     onClick={() => onSelectFile(f)}
-                    onDoubleClick={() => onSelectFile(f)}
+                    onDoubleClick={() => onPlayFile(f)}
                     className={`cursor-pointer transition-colors ${
                       active
                         ? 'bg-[var(--accent)]/15 text-[var(--text)]'

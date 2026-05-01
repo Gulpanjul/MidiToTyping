@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Play,
   Pause,
-  ListMusic,
-  LogOut,
   Music2,
   Activity,
   Gauge,
@@ -21,13 +19,9 @@ import { onPlaybackTick } from '../lib/tauri';
 
 interface Props {
   open: boolean;
-  /** Esc key dismissal. Behaves the same as "Pilih Lagu Lain": pause + close.
-   *  Backdrop click and X button are disabled (showCloseButton=false on Dialog). */
+  /** Triggered by Esc key or X button — pauses playback and returns to song browser.
+   *  App-level exit is now done via the title bar close button only. */
   onClose: () => void;
-  /** "🎵 Pilih Lagu Lain" — pause + close popup, return to song browser. */
-  onPickAnother: () => void;
-  /** "✕ Keluar" — pause + close popup + close the app window (mirrors Python main loop break). */
-  onExit: () => void;
   songName: string;
 }
 
@@ -53,7 +47,7 @@ const HOTKEY_CHIPS = [
   { key: 'INS', id: 'Restart', en: 'Restart' },
 ];
 
-export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: Props) {
+export function PlayerSheet({ open, onClose, songName }: Props) {
   const { config } = useConfig();
   const { state, toggle, seek, restart } = usePlayback();
   const S = STRINGS[config.lang];
@@ -136,7 +130,7 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
   const progress = state.total ? (state.index / state.total) * 100 : 0;
 
   return (
-    <Dialog open={open} onClose={onClose} title={S.player_title} size="lg" showCloseButton={false}>
+    <Dialog open={open} onClose={onClose} title={S.player_title} size="lg">
       <div className="space-y-4">
         {/* Now-playing card */}
         <div
@@ -310,18 +304,6 @@ export function PlayerSheet({ open, onClose, onPickAnother, onExit, songName }: 
             className="gap-1.5 px-3"
           >
             <RotateCcw size={14} />
-          </Button>
-        </div>
-
-        {/* Navigation row — pick another / exit app */}
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={onPickAnother} size="md" className="flex-1 gap-2">
-            <ListMusic size={14} />
-            {stripPrefix(S.player_pick)}
-          </Button>
-          <Button variant="ghost" onClick={onExit} size="md" className="flex-1 gap-2">
-            <LogOut size={14} />
-            {stripPrefix(S.player_exit)}
           </Button>
         </div>
       </div>

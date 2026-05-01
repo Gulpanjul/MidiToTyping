@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { PlaybackProvider } from './contexts/PlaybackContext';
 import { useTheme } from './hooks/useTheme';
@@ -11,6 +10,7 @@ import { FolderPane } from './components/FolderPane';
 import { MusicPane } from './components/MusicPane';
 import { BottomBar } from './components/BottomBar';
 import { PlayerSheet } from './components/PlayerSheet';
+import { Splash } from './components/Splash';
 import { UnsupportedBanner } from './components/UnsupportedBanner';
 import { api } from './lib/tauri';
 import type { MidiFile } from './types';
@@ -32,29 +32,19 @@ function Shell() {
     if (ready && !folder && config.folders[0]) setFolder(config.folders[0]);
   }, [ready, folder, config.folders]);
 
-  async function onPlay() {
-    if (!file) return;
-    await loadSong(file.path); // arms engine in paused state at index 0
+  async function onPlay(target?: MidiFile) {
+    const f = target ?? file;
+    if (!f) return;
+    if (target && target.path !== file?.path) setFile(target);
+    await loadSong(f.path); // arms engine in paused state at index 0
     setShowPlayer(true); // user presses Play in popup or DELETE hotkey to start
   }
 
-  // "Pilih Lagu Lain" → pause and close popup (returns user to song browser).
-  async function onPickAnother() {
+  // X button / Esc → pause and close popup (returns user to song browser).
+  // App-level exit is handled exclusively by the TitleBar close button.
+  async function onClosePlayer() {
     await pause();
     setShowPlayer(false);
-  }
-
-  // "Keluar" → pause, close popup, then close the app window. Mirrors
-  // the Python main loop where `action == 'exit'` breaks out of the
-  // outer while-loop in legacy/playSong_clean.py:79-80.
-  async function onExit() {
-    await pause();
-    setShowPlayer(false);
-    try {
-      await getCurrentWindow().close();
-    } catch {
-      // running in browser dev mode (no Tauri runtime) — ignore
-    }
   }
 
   return (
@@ -70,14 +60,18 @@ function Shell() {
             setFile(null);
           }}
         />
-        <MusicPane folder={folder} selectedFile={file} onSelectFile={setFile} />
+        <MusicPane
+          folder={folder}
+          selectedFile={file}
+          onSelectFile={setFile}
+          onPlayFile={(f) => onPlay(f)}
+          disableNav={showPlayer}
+        />
       </div>
-      <BottomBar selectedFile={file} onPlay={onPlay} />
+      <BottomBar selectedFile={file} onPlay={() => onPlay()} />
       <PlayerSheet
         open={showPlayer}
-        onClose={onPickAnother}
-        onPickAnother={onPickAnother}
-        onExit={onExit}
+        onClose={onClosePlayer}
         songName={file?.name ?? ''}
       />
     </div>
@@ -89,6 +83,7 @@ export default function App() {
     <ConfigProvider>
       <PlaybackProvider>
         <Shell />
+        <Splash />
       </PlaybackProvider>
     </ConfigProvider>
   );
