@@ -3,7 +3,9 @@
 //!   - per-note delay scaled by speed: delay/speed
 //!   - rewind = max(0, idx - 10)
 //!   - skip   = idx + 10, but if idx + 10 >= total then reset to 0 + pause
-//!   - restart = idx = 0, is_playing = true
+//!   - restart = idx = 0, is_playing = false (diverges from legacy Python,
+//!     which auto-played on INSERT — current UX prefers an explicit Play
+//!     after restart so users don't get surprised by sudden output).
 //!   - generation token = JoinHandle::abort() on transition
 
 use crate::injector::Injector;
@@ -149,14 +151,15 @@ impl PlaybackEngine {
     }
 
     pub async fn restart(&self) {
+        // Restart rewinds to index 0 and *pauses*. The user has to press
+        // Play (or the DELETE hotkey) to resume from the beginning. This is
+        // intentional: in heads-down practice an accidental INSERT used to
+        // immediately blast the keyboard from note 0, which was startling.
         self.abort_running().await;
-        {
-            let mut s = self.state.lock().await;
-            s.index = 0;
-            s.is_playing = true;
-            self.sink.emit_state(&s);
-        }
-        self.spawn_task().await;
+        let mut s = self.state.lock().await;
+        s.index = 0;
+        s.is_playing = false;
+        self.sink.emit_state(&s);
     }
 
     async fn abort_running(&self) {
@@ -320,21 +323,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn restart_sets_index_zero_and_plays() {
+    async fn restart_resets_index_and_pauses() {
         let (eng, inj) = engine();
         eng.load(schedule(&["a", "b"]), None).await;
         eng.play().await;
         tokio::time::sleep(Duration::from_millis(20)).await;
         eng.restart().await;
-        for _ in 0..100 {
-            if !eng.snapshot().await.is_playing {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(10)).await;
-        }
+        // Restart now stops the engine at index 0 — no auto-play.
+        let s = eng.snapshot().await;
+        assert_eq!(s.index, 0);
+        assert!(!s.is_playing);
+        // The pre-restart play() did fire some events; we just want to
+        // confirm at least one was a press of 'a' (i.e. the engine actually
+        // ran before being reset), not that it kept running afterwards.
         let evs = inj.events.lock().unwrap().clone();
-        // we know at least one "press a" exists and the engine ended at index 0 again.
         assert!(evs.iter().any(|e| e == "press a"));
-        assert_eq!(eng.snapshot().await.index, 0);
     }
 }
