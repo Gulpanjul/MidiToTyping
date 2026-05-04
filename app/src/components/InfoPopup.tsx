@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 const APP = {
-  version: '0.1.0',
-  date: '2026-04-28',
+  version: '0.2.0',
+  date: '2026-05-02',
   author: 'Gulpanjul',
   github: 'github.com/Gulpanjul/MidiToTyping',
   stack: 'Tauri v2  ·  React 19  ·  Rust  ·  midly  ·  enigo',
