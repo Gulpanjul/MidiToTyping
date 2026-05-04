@@ -1,0 +1,7 @@
+# TypeScript composite-project build output (kept out of source tree via tsconfig.*.json outDir)
+.tsbuild/
+
+# Defense-in-depth: any stray composite emissions that escape .tsbuild/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

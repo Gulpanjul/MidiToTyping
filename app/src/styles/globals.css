@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* These :root values are the runtime-mutable theme. applyTheme() in
+   src/theme/themes.ts overwrites them when the user toggles theme/palette. */
+:root {
+  --bg: #09090B;
+  --panel: #18181B;
+  --accent: #FAFAFA;
+  --accent-hov: #D4D4D8;
+  --text: #FAFAFA;
+  --subtext: #71717A;
+  --entry-bg: #27272A;
+  --btn-hov: #27272A;
+  --row-alt: #111113;
+  --sel-bg: #3F3F46;
+  --border: #27272A;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-accent: var(--accent);
+  --color-text: var(--text);
+  --color-subtext: var(--subtext);
+  --color-border: var(--border);
+
+  /* Animation keyframes used by dialog enter and accent glow. */
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-scale-in: scale-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes splash-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-splash-pop {
+  animation: splash-pop 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes splash-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.4); }
+}
+.animate-splash-pulse {
+  animation: splash-pulse 1100ms ease-in-out infinite;
+}
+
+/* Marquee: sweeps right then back, with a brief hold at each end. The end
+   offset is supplied per-instance via --marquee-shift so the animation
+   only travels the exact overflow distance — no wrap-around, no clones. */
+@keyframes marquee {
+  0%, 8%    { transform: translateX(0); }
+  45%, 55%  { transform: translateX(var(--marquee-shift, 0)); }
+  92%, 100% { transform: translateX(0); }
+}
+.animate-marquee {
+  animation-name: marquee;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  /* animation-duration is supplied inline by the React component. */
+}
+
+html, body, #root { height: 100%; }
+html { font-size: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Scale base font up on bigger displays so the 18-30 user on a 1440p / 4K
+   monitor doesn't see microscopic text. Tailwind size utilities (text-xs,
+   text-sm, etc.) are rem-based, so bumping the html root size scales
+   everything proportionally without rewriting components. */
+@media (min-width: 1600px) {
+  html { font-size: 17px; }
+}
+@media (min-width: 2000px) {
+  html { font-size: 18px; }
+}
+@media (min-width: 2560px) {
+  html { font-size: 20px; }
+}
+
+/* Custom range slider with accent thumb + soft glow on hover/drag.
+   Replaces the default browser slider for a polished gaming-app feel. */
+.ps-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--entry-bg);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.ps-slider:hover { background: var(--btn-hov); }
+
+.ps-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.ps-slider:hover::-webkit-slider-thumb,
+.ps-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.ps-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.ps-slider:hover::-moz-range-thumb,
+.ps-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.ps-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}

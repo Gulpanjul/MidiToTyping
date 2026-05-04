@@ -1,0 +1,40 @@
+[package]
+name = "playsong"
+version = "0.1.0"
+edition = "2021"
+description = "MIDI-to-typing auto-player (Tauri v2)"
+authors = ["Gulpanjul"]
+license = "MIT"
+
+[lib]
+name = "playsong_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.1", features = [] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-store = "2.0"
+tauri-plugin-global-shortcut = "2.0"
+tauri-plugin-os = "2.0"
+tauri-plugin-shell = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+midly = "0.5"
+enigo = "0.3"
+thiserror = "2"
+anyhow = "1"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Media"] }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

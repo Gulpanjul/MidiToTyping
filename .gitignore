@@ -25,3 +25,16 @@ archive/
 
 # Claude Code local settings
 .claude/
+
+# Secrets / env
+.env
+.env.*
+
+app/node_modules/
+app/dist/
+src-tauri/target/
+src-tauri/gen/
+
+# TS composite emissions
+.tsbuild/
+*.tsbuildinfo
