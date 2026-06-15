@@ -50,8 +50,10 @@
     <li><a href="#build">Build</a></li>
     <li><a href="#legacy-python-build">Legacy Python build</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
@@ -332,6 +334,28 @@ Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
 
 
 
+<!-- CONTRIBUTING -->
+## Contributing
+
+Proyek internal LSH. Kontribusi dari anggota tim sangat diterima — setiap perbaikan membuat build ini lebih baik. Bug fix & fitur baru **hanya** masuk ke build Tauri (`app/` + `src-tauri/`); `legacy/` adalah arsip referensi.
+
+1. Buat branch fitur (`git checkout -b feat/AmazingFeature`)
+2. Lewati gerbang kualitas sebelum commit: `cargo test`, `npm run typecheck`, `npm run build`
+3. Commit perubahan (`git commit -m 'feat: Add AmazingFeature'`)
+4. Push branch (`git push origin feat/AmazingFeature`) lalu buka Pull Request
+
+Baca [SYSTEM_MAP.md](SYSTEM_MAP.md) sebagai kompas arsitektur sebelum mulai.
+
+### Top contributors
+
+<a href="https://github.com/Gulpanjul/MidiToTyping/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Gulpanjul/MidiToTyping" alt="contrib.rocks image" />
+</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
 <!-- LICENSE -->
 ## License
 
@@ -347,6 +371,24 @@ Internal project. Tidak untuk distribusi eksternal tanpa izin.
 Gulpanjul — [gulpa.andhikac@gmail.com](mailto:gulpa.andhikac@gmail.com)
 
 Project Link: [https://github.com/Gulpanjul/MidiToTyping](https://github.com/Gulpanjul/MidiToTyping)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+
+Resource & library yang membuat proyek ini mungkin:
+
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — kerangka README ini
+* [Tauri](https://tauri.app/)
+* [midly](https://crates.io/crates/midly) — zero-copy MIDI parser
+* [enigo](https://crates.io/crates/enigo) — synthetic keyboard injection
+* [tokio](https://tokio.rs/) — async runtime playback engine
+* [Lucide Icons](https://lucide.dev/)
+* [Tailwind CSS](https://tailwindcss.com/)
+* [Shields.io](https://shields.io/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
