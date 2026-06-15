@@ -22,17 +22,17 @@ const APP = {
   stack: 'Tauri v2  ·  React 19  ·  Rust  ·  midly  ·  enigo',
 };
 
-const HOTKEYS = [
-  { key: 'DELETE', icon: Play, id: 'Play / Jeda', en: 'Play / Pause' },
-  { key: 'HOME', icon: Rewind, id: 'Mundur 10 note', en: 'Rewind 10 notes' },
-  { key: 'END', icon: FastForward, id: 'Maju 10 note', en: 'Skip 10 notes' },
-  { key: 'INSERT', icon: RotateCcw, id: 'Restart dari awal', en: 'Restart from beginning' },
+type HkLabelKey = 'hk_play_pause' | 'hk_rewind' | 'hk_skip' | 'hk_restart';
+const HOTKEYS: { key: string; icon: typeof Play; labelKey: HkLabelKey }[] = [
+  { key: 'DELETE', icon: Play, labelKey: 'hk_play_pause' },
+  { key: 'HOME', icon: Rewind, labelKey: 'hk_rewind' },
+  { key: 'END', icon: FastForward, labelKey: 'hk_skip' },
+  { key: 'INSERT', icon: RotateCcw, labelKey: 'hk_restart' },
 ];
 
 export function InfoPopup({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { config } = useConfig();
   const S = STRINGS[config.lang];
-  const lang = config.lang;
 
   return (
     <Dialog open={open} onClose={onClose} title={S.info_title} size="md">
@@ -45,7 +45,7 @@ export function InfoPopup({ open, onClose }: { open: boolean; onClose: () => voi
           <div className="min-w-0">
             <div className="text-base font-semibold leading-tight">playSong</div>
             <div className="text-xs text-[var(--subtext)] mt-0.5">
-              {lang === 'id' ? 'MIDI Auto-Player untuk piano game' : 'MIDI auto-player for piano games'}
+              {S.app_tagline}
             </div>
             <div className="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-md bg-[var(--entry-bg)] border border-[var(--border)] text-[10px] font-mono text-[var(--subtext)]">
               v{APP.version}
@@ -55,8 +55,8 @@ export function InfoPopup({ open, onClose }: { open: boolean; onClose: () => voi
 
         {/* Metadata grid */}
         <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-xs">
-          <Meta icon={User} label={lang === 'id' ? 'Dibuat oleh' : 'Made by'} value={APP.author} />
-          <Meta icon={Calendar} label={lang === 'id' ? 'Dirilis' : 'Released'} value={APP.date} />
+          <Meta icon={User} label={S.made_by} value={APP.author} />
+          <Meta icon={Calendar} label={S.released} value={APP.date} />
           <Meta icon={Cpu} label="Stack" value={APP.stack} mono />
           <Meta
             icon={Github}
@@ -78,10 +78,10 @@ export function InfoPopup({ open, onClose }: { open: boolean; onClose: () => voi
         <div>
           <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--subtext)]">
             <Keyboard size={13} />
-            {lang === 'id' ? 'Kontrol Saat Bermain' : 'Playback Controls'}
+            {S.playback_controls}
           </div>
           <ul className="space-y-1.5">
-            {HOTKEYS.map(({ key, icon: Icon, id, en }) => (
+            {HOTKEYS.map(({ key, icon: Icon, labelKey }) => (
               <li
                 key={key}
                 className="flex items-center gap-3 px-3 py-2 rounded-md bg-[var(--entry-bg)]/40 border border-[var(--border)]"
@@ -90,7 +90,7 @@ export function InfoPopup({ open, onClose }: { open: boolean; onClose: () => voi
                   {key}
                 </kbd>
                 <Icon size={14} className="text-[var(--subtext)] shrink-0" />
-                <span className="text-xs">{lang === 'id' ? id : en}</span>
+                <span className="text-xs">{S[labelKey]}</span>
               </li>
             ))}
           </ul>

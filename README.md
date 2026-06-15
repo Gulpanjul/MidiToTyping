@@ -27,7 +27,7 @@
 
 
 
-> **Tauri rewrite (v0.1.x) is the current build.** Vite + React 19 +
+> **Tauri rewrite (v0.2.x) is the current build.** Vite + React 19 +
 > TypeScript frontend dengan Rust backend. Drop the Administrator
 > requirement, ~5 MB exe, custom title bar, no UAC. Implementasi Python
 > lama dipindah ke [`legacy/`](legacy/) sebagai referensi.
@@ -92,7 +92,7 @@ Backend: [midly](https://crates.io/crates/midly) (zero-copy MIDI parser), [enigo
 
 ### Prerequisites
 
-* Windows 10/11 (Linux/macOS akan compile tapi playback di-disable di v0.1)
+* Windows 10/11 (Linux/macOS akan compile tapi playback di-disable — Windows-only)
 * [Node.js 20+](https://nodejs.org/)
 * [Rust toolchain](https://www.rust-lang.org/tools/install)
 * (Opsional) [Tauri CLI](https://tauri.app/start/prerequisites/) untuk dev/build
@@ -121,7 +121,7 @@ Atau download MSI/NSIS installer dari [Releases](https://github.com/Gulpanjul/Mi
 ## Usage
 
 1. Buka aplikasi → window terbuka tanpa UAC prompt
-2. Klik **➕** untuk menambah folder berisi file `.mid` / `.midi` (scan rekursif otomatis)
+2. Klik **➕** untuk menambah folder berisi file `.mid` / `.midi` (scan 1 level / non-rekursif — tambahkan subfolder secara terpisah bila perlu)
 3. Pilih lagu, set kecepatan dengan slider (label difficulty update real-time)
 4. Klik **▶ Mainkan File Ini** → player popup terbuka di state **paused**
 5. Alt-tab ke window game target, fokus di sana
@@ -233,8 +233,8 @@ cargo tauri build
 Output:
 ```
 src-tauri/target/release/playsong.exe                              ~5.36 MB
-src-tauri/target/release/bundle/msi/playSong_0.1.0_x64_en-US.msi   ~2.62 MB
-src-tauri/target/release/bundle/nsis/playSong_0.1.0_x64-setup.exe  ~1.82 MB
+src-tauri/target/release/bundle/msi/playSong_0.2.0_x64_en-US.msi   ~2.62 MB
+src-tauri/target/release/bundle/nsis/playSong_0.2.0_x64-setup.exe  ~1.82 MB
 ```
 
 ### Tests
@@ -311,7 +311,7 @@ Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
 <!-- ROADMAP -->
 ## Roadmap
 
-**v0.1 (current)**
+**v0.1**
 - [x] Tauri v2 + Vite + React 19 + TypeScript stack
 - [x] Verbatim port domain truths dari Python (mapping, whitelist, shift, seek)
 - [x] Custom title bar tanpa Windows chrome
@@ -322,8 +322,8 @@ Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
 - [x] Persistent config via tauri-plugin-store
 - [x] Bundle ≤ 8 MB (achieved 5.36 MB exe)
 
-**v0.2 (planned)**
-- [ ] In-app rewind/skip/restart buttons di PlayerSheet (untuk keyboard 65%)
+**v0.2 (current)**
+- [x] In-app rewind/skip/restart buttons di PlayerSheet (untuk keyboard 65%)
 - [ ] Tempo change mid-song (saat ini hanya read initial tempo)
 - [ ] CI: GH Actions Windows runner (cargo test + clippy + tauri build)
 - [ ] Integration test untuk command→sink→event chain
