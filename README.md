@@ -16,7 +16,7 @@
   <h3 align="center">playSong — MIDI to Keyboard Auto-Player</h3>
 
   <p align="center">
-    Konversi file MIDI menjadi simulasi penekanan keyboard otomatis untuk game piano.
+    Convert MIDI files into automated keyboard-press simulation for piano games.
     <br />
     <br />
     <a href="https://github.com/Gulpanjul/MidiToTyping/issues/new?labels=bug">Report Bug</a>
@@ -28,9 +28,9 @@
 
 
 > **Tauri rewrite (v0.2.x) is the current build.** Vite + React 19 +
-> TypeScript frontend dengan Rust backend. Drop the Administrator
-> requirement, ~5 MB exe, custom title bar, no UAC. Implementasi Python
-> lama dipindah ke [`legacy/`](legacy/) sebagai referensi.
+> TypeScript frontend with a Rust backend. Drops the Administrator
+> requirement, ~5 MB exe, custom title bar, no UAC. The old Python
+> implementation moved to [`legacy/`](legacy/) for reference.
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -62,17 +62,17 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-**playSong** mengkonversi file MIDI menjadi simulasi penekanan keyboard otomatis — cocok untuk game piano berbasis keyboard seperti **Sky: Children of the Light** dan **Piano Tiles**. User memilih file MIDI via GUI, lalu aplikasi menekan tombol keyboard sesuai timing MIDI secara otomatis.
+**playSong** converts MIDI files into automated keyboard-press simulation — a fit for keyboard-based piano games like **Sky: Children of the Light** and **Piano Tiles**. The user picks a MIDI file via the GUI, then the app presses keyboard keys automatically per the MIDI timing.
 
-Fitur utama:
-* Multi-folder picker dengan filter real-time
-* Slider kecepatan playback 0.25× – 3.00× dengan label difficulty (Beginner → Master)
-* Hotkey global: Play/Pause (DELETE), Rewind (HOME), Skip (END), Restart (INSERT)
-* Custom title bar tanpa Windows chrome standar
-* Note log scrolling di player popup
-* Dua tema (dark/light), dua palet warna (**Zinc** & **Slate**), dua bahasa (ID/EN)
-* **Tidak butuh Administrator** — pakai Win32 API standar (`SetWindowsHookEx`, `SendInput`)
-* Bundle kecil: ~5.36 MB exe / ~2.62 MB MSI / ~1.82 MB NSIS
+Key features:
+* Multi-folder picker with real-time filtering
+* Playback speed slider 0.25× – 3.00× with a difficulty label (Beginner → Master)
+* Global hotkeys: Play/Pause (DELETE), Rewind (HOME), Skip (END), Restart (INSERT)
+* Custom title bar without the standard Windows chrome
+* Scrolling note log in the player popup
+* Two themes (dark/light), two color palettes (**Zinc** & **Slate**), two languages (ID/EN)
+* **No Administrator required** — uses standard Win32 APIs (`SetWindowsHookEx`, `SendInput`)
+* Small bundle: ~5.36 MB exe / ~2.62 MB MSI / ~1.82 MB NSIS
 
 ### Built With
 
@@ -94,10 +94,10 @@ Backend: [midly](https://crates.io/crates/midly) (zero-copy MIDI parser), [enigo
 
 ### Prerequisites
 
-* Windows 10/11 (Linux/macOS akan compile tapi playback di-disable — Windows-only)
+* Windows 10/11 (Linux/macOS will compile but playback is disabled — Windows-only)
 * [Node.js 20+](https://nodejs.org/)
 * [Rust toolchain](https://www.rust-lang.org/tools/install)
-* (Opsional) [Tauri CLI](https://tauri.app/start/prerequisites/) untuk dev/build
+* (Optional) [Tauri CLI](https://tauri.app/start/prerequisites/) for dev/build
 
 ### Install & Run
 
@@ -113,7 +113,7 @@ cd app && npm install && cd ..
 cd src-tauri && cargo tauri dev
 ```
 
-Atau download MSI/NSIS installer dari [Releases](https://github.com/Gulpanjul/MidiToTyping/releases).
+Or download the MSI/NSIS installer from [Releases](https://github.com/Gulpanjul/MidiToTyping/releases).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -122,29 +122,29 @@ Atau download MSI/NSIS installer dari [Releases](https://github.com/Gulpanjul/Mi
 <!-- USAGE -->
 ## Usage
 
-1. Buka aplikasi → window terbuka tanpa UAC prompt
-2. Klik **➕** untuk menambah folder berisi file `.mid` / `.midi` (scan 1 level / non-rekursif — tambahkan subfolder secara terpisah bila perlu)
-3. Pilih lagu, set kecepatan dengan slider (label difficulty update real-time)
-4. Klik **▶ Mainkan File Ini** → player popup terbuka di state **paused**
-5. Alt-tab ke window game target, fokus di sana
-6. Tekan **DELETE** untuk mulai playback (atau klik tombol Mainkan di popup)
+1. Open the app → the window opens with no UAC prompt
+2. Click **➕** to add a folder of `.mid` / `.midi` files (1-level / non-recursive scan — add subfolders separately if needed)
+3. Pick a song, set the speed with the slider (difficulty label updates in real time)
+4. Click **▶ Play This File** → the player popup opens in the **paused** state
+5. Alt-tab to the target game window and focus it
+6. Press **DELETE** to start playback (or click the Play button in the popup)
 
 ### Hotkey Playback (global)
 
-| Tombol | Fungsi |
+| Key | Function |
 |--------|--------|
 | `DELETE` | Play / Pause toggle |
-| `HOME` | Rewind — mundur 10 nada |
-| `END` | Skip — maju 10 nada (atau reset jika dekat akhir) |
-| `INSERT` | Restart dari awal |
+| `HOME` | Rewind — back 10 notes |
+| `END` | Skip — forward 10 notes (or reset if near the end) |
+| `INSERT` | Restart from the beginning |
 
 ### Known Limitations
 
-1. **Window game harus punya fokus** — `SendInput` tidak menargetkan HWND spesifik
-2. **Game dengan DirectInput/Raw Input** mungkin bypass — game modern tertentu (Unreal/Unity) tidak menerima synthetic input
-3. **MIDI multi-channel flatten** — semua track digabung, not di luar range 61-tombol di-fold ke oktaf terdekat
-4. **Keyboard 65% (no nav cluster)** — HOME/END/INSERT secara fisik tidak ada; user harus pakai Fn-layer atau remap. Kandidat untuk in-app rewind/skip/restart buttons di v0.2.
-5. **Default speed 0.95×** — kompensasi karena Rust `tokio::sleep` lebih presisi dari Python `threading.Timer`. User upgrading dari Python build akan merasakan tempo yang sama di 0.95× Tauri vs 1.0× Python.
+1. **The game window must have focus** — `SendInput` does not target a specific HWND
+2. **Games with DirectInput/Raw Input** may bypass it — certain modern games (Unreal/Unity) don't accept synthetic input
+3. **MIDI multi-channel flatten** — all tracks are merged; notes outside the 61-key range are folded to the nearest octave
+4. **65% keyboards (no nav cluster)** — HOME/END/INSERT are physically absent; the user must use an Fn-layer or remap. Note: in-app rewind/skip/restart buttons were added in v0.2.
+5. **Default speed 0.95×** — compensation because Rust `tokio::sleep` is more precise than Python's `threading.Timer`. Users upgrading from the Python build feel the same tempo at 0.95× Tauri vs 1.0× Python.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -169,7 +169,7 @@ app/                              — Vite + React 19 + TypeScript frontend
 │       ├── FolderPane.tsx        — folder list + speed slider w/ difficulty label
 │       ├── MusicPane.tsx         — song table with debounced search
 │       ├── BottomBar.tsx         — Play button
-│       ├── PlayerSheet.tsx       — Dialog with progress + Play/Pause + Pilih Lagu Lain + Keluar + note log
+│       ├── PlayerSheet.tsx       — Dialog with progress + Play/Pause + Pick Another Song + Exit + note log
 │       ├── InfoPopup.tsx         — About modal (sectioned)
 │       └── UnsupportedBanner.tsx — non-Windows guard banner
 └── public/playsong-icon.png      — 32×32 title bar logo
@@ -189,12 +189,12 @@ src-tauri/                        — Tauri v2 Rust backend
 ├── capabilities/default.json     — Tauri v2 capability whitelist
 └── tauri.conf.json               — window config (decorations: false, transparent: false)
 
-legacy/                           — Python implementation (reference-only, lihat di bawah)
+legacy/                           — Python implementation (reference-only, see below)
 ```
 
-**Domain truths** (port verbatim dari Python — jangan re-derive):
+**Domain truths** (verbatim port from Python — do not re-derive):
 
-| Konsep | Tauri | Python source |
+| Concept | Tauri | Python source |
 |---|---|---|
 | `_SCALE` mapping | `src-tauri/src/mapping.rs` | `legacy/src/midi_parser.py:7` |
 | `_ALLOWED` whitelist | `src-tauri/src/injector.rs` | `legacy/src/keyboard_sim.py:3-8` |
@@ -209,14 +209,14 @@ legacy/                           — Python implementation (reference-only, lih
 <!-- FILE FORMAT -->
 ## File Format
 
-File `.mid` / `.midi` standar didukung. Program otomatis mengonversi not MIDI ke mapping piano 61-tombol (C2–C7).
+Standard `.mid` / `.midi` files are supported. The program automatically converts MIDI notes to the 61-key piano mapping (C2–C7).
 
-**Key scale** (61 tombol):
+**Key scale** (61 keys):
 ```
 1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm
 ```
 
-Note di luar range C2–C7 di-fold ke oktaf terdekat. Multi-channel MIDI di-flatten (semua track digabung).
+Notes outside the C2–C7 range are folded to the nearest octave. Multi-channel MIDI is flattened (all tracks merged).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -248,8 +248,8 @@ cd app && npm run typecheck        # TS strict-mode check
 
 ### Toolchain notes
 
-- `cargo` biasanya di `C:\Users\<user>\.cargo\bin\` — prepend ke PATH kalau perlu
-- `npm` di `C:\Program Files\nodejs\` — pakai `& "C:\Program Files\nodejs\npm.cmd"` di PowerShell untuk bypass execution-policy
+- `cargo` is usually in `C:\Users\<user>\.cargo\bin\` — prepend it to PATH if needed
+- `npm` is in `C:\Program Files\nodejs\` — use `& "C:\Program Files\nodejs\npm.cmd"` in PowerShell to bypass the execution policy
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -258,14 +258,14 @@ cd app && npm run typecheck        # TS strict-mode check
 <!-- LEGACY -->
 ## Legacy Python build
 
-Implementasi Python original disimpan di [`legacy/`](legacy/) untuk referensi dan verifikasi parity. **Tidak di-maintain aktif** — bug fix dan fitur baru hanya masuk ke build Tauri.
+The original Python implementation is kept in [`legacy/`](legacy/) for reference and parity verification. **Not actively maintained** — bug fixes and new features go only into the Tauri build.
 
 ### Run legacy
 
 ```bash
 cd legacy
 pip install keyboard mido
-# Wajib Administrator
+# Requires Administrator
 python playSong_clean.py
 ```
 
@@ -278,7 +278,7 @@ cd legacy
 # Output: legacy/dist/playSong_clean.exe
 ```
 
-Nuitka (~8.5 MB, butuh Python 3.12):
+Nuitka (~8.5 MB, requires Python 3.12):
 ```bash
 cd legacy
 uv python install 3.12
@@ -299,12 +299,12 @@ PYTHONIOENCODING=utf-8 python tests/test_playSong.py
 
 ### Why was Python archived?
 
-- Butuh Administrator (driver-style hook via `keyboard` library)
-- ~10–15ms timer jitter dari `threading.Timer`
+- Requires Administrator (driver-style hook via the `keyboard` library)
+- ~10–15ms timer jitter from `threading.Timer`
 - Bundle size 11 MB+ (vs 5.36 MB Tauri exe)
-- Tidak punya custom title bar / modern shadcn UI
+- No custom title bar / modern shadcn UI
 
-Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
+The Tauri rewrite solves all of the above without compromising feature parity.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -315,20 +315,20 @@ Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
 
 **v0.1**
 - [x] Tauri v2 + Vite + React 19 + TypeScript stack
-- [x] Verbatim port domain truths dari Python (mapping, whitelist, shift, seek)
-- [x] Custom title bar tanpa Windows chrome
+- [x] Verbatim port of domain truths from Python (mapping, whitelist, shift, seek)
+- [x] Custom title bar without Windows chrome
 - [x] Hotkey global (DELETE/HOME/END/INSERT)
 - [x] Multi-folder picker, search, speed slider, theme/palette/lang toggle
-- [x] Player popup dengan note log, Pilih Lagu Lain, Keluar
-- [x] Default speed 0.95× untuk parity feel dengan Python build
+- [x] Player popup with note log, Pick Another Song, Exit
+- [x] Default speed 0.95× for parity feel with the Python build
 - [x] Persistent config via tauri-plugin-store
 - [x] Bundle ≤ 8 MB (achieved 5.36 MB exe)
 
 **v0.2 (current)**
-- [x] In-app rewind/skip/restart buttons di PlayerSheet (untuk keyboard 65%)
-- [ ] Tempo change mid-song (saat ini hanya read initial tempo)
+- [x] In-app rewind/skip/restart buttons in PlayerSheet (for 65% keyboards)
+- [ ] Mid-song tempo change (currently only reads the initial tempo)
 - [ ] CI: GH Actions Windows runner (cargo test + clippy + tauri build)
-- [ ] Integration test untuk command→sink→event chain
+- [ ] Integration test for the command→sink→event chain
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -337,14 +337,14 @@ Tauri rewrite mengatasi semua di atas tanpa kompromi pada feature parity.
 <!-- CONTRIBUTING -->
 ## Contributing
 
-Proyek internal LSH. Kontribusi dari anggota tim sangat diterima — setiap perbaikan membuat build ini lebih baik. Bug fix & fitur baru **hanya** masuk ke build Tauri (`app/` + `src-tauri/`); `legacy/` adalah arsip referensi.
+An LSH internal project. Contributions from team members are very welcome — every improvement makes this build better. Bug fixes & new features go **only** into the Tauri build (`app/` + `src-tauri/`); `legacy/` is a reference archive.
 
-1. Buat branch fitur (`git checkout -b feat/AmazingFeature`)
-2. Lewati gerbang kualitas sebelum commit: `cargo test`, `npm run typecheck`, `npm run build`
-3. Commit perubahan (`git commit -m 'feat: Add AmazingFeature'`)
-4. Push branch (`git push origin feat/AmazingFeature`) lalu buka Pull Request
+1. Create a feature branch (`git checkout -b feat/AmazingFeature`)
+2. Pass the quality gates before committing: `cargo test`, `npm run typecheck`, `npm run build`
+3. Commit your changes (`git commit -m 'feat: Add AmazingFeature'`)
+4. Push the branch (`git push origin feat/AmazingFeature`) and open a Pull Request
 
-Baca [SYSTEM_MAP.md](SYSTEM_MAP.md) sebagai kompas arsitektur sebelum mulai.
+Read [SYSTEM_MAP.md](SYSTEM_MAP.md) as the architecture compass before you start.
 
 ### Top contributors
 
@@ -359,7 +359,7 @@ Baca [SYSTEM_MAP.md](SYSTEM_MAP.md) sebagai kompas arsitektur sebelum mulai.
 <!-- LICENSE -->
 ## License
 
-Internal project. Tidak untuk distribusi eksternal tanpa izin.
+Internal project. Not for external distribution without permission.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -379,9 +379,9 @@ Project Link: [https://github.com/Gulpanjul/MidiToTyping](https://github.com/Gul
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-Resource & library yang membuat proyek ini mungkin:
+Resources & libraries that made this project possible:
 
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — kerangka README ini
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — this README's template
 * [Tauri](https://tauri.app/)
 * [midly](https://crates.io/crates/midly) — zero-copy MIDI parser
 * [enigo](https://crates.io/crates/enigo) — synthetic keyboard injection
