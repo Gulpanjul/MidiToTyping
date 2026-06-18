@@ -50,6 +50,28 @@ export interface StringsBundle {
   player_hotkeys: string;
   player_ready: string;
   player_stats: string;
+  np_playing: string;
+  np_ready: string;
+  note_log: string;
+  log_waiting: string;
+  log_idle_hint: string;
+  aria_rewind: string;
+  aria_skip: string;
+  aria_restart: string;
+  chip_play_pause: string;
+  chip_restart: string;
+  search_placeholder: string;
+  no_match: string;
+  folder_empty: string;
+  no_song_selected: string;
+  app_tagline: string;
+  made_by: string;
+  released: string;
+  playback_controls: string;
+  hk_play_pause: string;
+  hk_rewind: string;
+  hk_skip: string;
+  hk_restart: string;
 }
 
 export const STRINGS: Record<Lang, StringsBundle> = {
@@ -99,6 +121,28 @@ export const STRINGS: Record<Lang, StringsBundle> = {
     player_hotkeys: 'Hotkey: DEL=Play/Jeda · HOME=−10 · END=+10 · INSERT=Restart',
     player_ready: '[SIAP] {name}',
     player_stats: '  Total nada : {n}   ·   Kecepatan : {s}×',
+    np_playing: 'Sedang Dimainkan',
+    np_ready: 'Siap Dimainkan',
+    note_log: 'Log Note',
+    log_waiting: 'Menunggu nada…',
+    log_idle_hint: 'Tekan Mainkan atau hotkey DELETE untuk mulai',
+    aria_rewind: 'Mundur 10 nada (HOME)',
+    aria_skip: 'Maju 10 nada (END)',
+    aria_restart: 'Mulai ulang (INSERT)',
+    chip_play_pause: 'Play / Jeda',
+    chip_restart: 'Restart',
+    search_placeholder: 'Cari lagu…',
+    no_match: 'Tidak ada lagu yang cocok',
+    folder_empty: 'Folder kosong',
+    no_song_selected: 'Belum ada lagu dipilih',
+    app_tagline: 'MIDI Auto-Player untuk piano game',
+    made_by: 'Dibuat oleh',
+    released: 'Dirilis',
+    playback_controls: 'Kontrol Saat Bermain',
+    hk_play_pause: 'Play / Jeda',
+    hk_rewind: 'Mundur 10 note',
+    hk_skip: 'Maju 10 note',
+    hk_restart: 'Restart dari awal',
   },
   en: {
     splash_loading: 'Loading application...',
@@ -146,6 +190,28 @@ export const STRINGS: Record<Lang, StringsBundle> = {
     player_hotkeys: 'Hotkeys: DEL=Play/Pause · HOME=−10 · END=+10 · INSERT=Restart',
     player_ready: '[READY] {name}',
     player_stats: '  Total notes : {n}   ·   Speed : {s}×',
+    np_playing: 'Now Playing',
+    np_ready: 'Ready to Play',
+    note_log: 'Note Log',
+    log_waiting: 'Waiting for notes…',
+    log_idle_hint: 'Press Play or DELETE hotkey to start',
+    aria_rewind: 'Rewind 10 notes (HOME)',
+    aria_skip: 'Skip 10 notes (END)',
+    aria_restart: 'Restart (INSERT)',
+    chip_play_pause: 'Play / Pause',
+    chip_restart: 'Restart',
+    search_placeholder: 'Search songs…',
+    no_match: 'No matching songs',
+    folder_empty: 'Folder empty',
+    no_song_selected: 'No song selected',
+    app_tagline: 'MIDI auto-player for piano games',
+    made_by: 'Made by',
+    released: 'Released',
+    playback_controls: 'Playback Controls',
+    hk_play_pause: 'Play / Pause',
+    hk_rewind: 'Rewind 10 notes',
+    hk_skip: 'Skip 10 notes',
+    hk_restart: 'Restart from beginning',
   },
 };
 

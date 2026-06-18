@@ -1,7 +1,9 @@
 //! Keyboard injection abstraction. Whitelist + shift map ported verbatim
 //! from legacy/src/keyboard_sim.py and legacy/src/constants.py CONVERSION_CASES.
 
+use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use std::sync::Mutex;
+use std::sync::Mutex as StdMutex;
 
 /// Verbatim from legacy/src/keyboard_sim.py:3-8
 pub const ALLOWED: &str = concat!(
@@ -68,9 +70,6 @@ impl Injector for MockInjector {
         self.events.lock().unwrap().push(format!("release {}", key));
     }
 }
-
-use enigo::{Direction, Enigo, Key, Keyboard, Settings};
-use std::sync::Mutex as StdMutex;
 
 pub struct EnigoInjector {
     inner: StdMutex<Enigo>,

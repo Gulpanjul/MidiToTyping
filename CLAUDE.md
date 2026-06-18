@@ -10,7 +10,7 @@ Repo ini menampung **dua implementasi**:
 
 | | Path | Status | Admin? |
 |---|---|---|---|
-| **Tauri rewrite (current)** | `app/` + `src-tauri/` | v0.1.x — primary build | ❌ Tidak butuh |
+| **Tauri rewrite (current)** | `app/` + `src-tauri/` | v0.2.x — primary build | ❌ Tidak butuh |
 | **Legacy Python** | `legacy/` | Reference-only, archived | ✅ Wajib |
 
 Bug fix dan fitur baru → **Tauri side saja**. Python tree disimpan untuk verifikasi parity dan referensi historis. Jangan edit `legacy/` kecuali user eksplisit minta.
@@ -90,7 +90,7 @@ Byte-for-byte ports dari Python build. Jangan redesign:
 - `END` — Skip 10 note (atau reset jika dekat akhir)
 - `INSERT` — Restart dari awal
 
-User dengan keyboard 65% (no nav cluster) tidak punya akses fisik ke HOME/END/INSERT — known limitation v0.1, candidate untuk in-app rewind/skip/restart buttons di v0.2.
+User dengan keyboard 65% (no nav cluster) tidak punya akses fisik ke HOME/END/INSERT — diatasi dengan tombol rewind/skip/restart in-app di PlayerSheet (v0.2).
 
 ### Default speed 0.95×
 
@@ -104,8 +104,8 @@ Python pakai library [`keyboard`](https://github.com/boppreh/keyboard) yang inst
 
 ```
 src-tauri/target/release/playsong.exe                              — 5.36 MB
-src-tauri/target/release/bundle/msi/playSong_0.1.0_x64_en-US.msi   — 2.62 MB
-src-tauri/target/release/bundle/nsis/playSong_0.1.0_x64-setup.exe  — 1.82 MB
+src-tauri/target/release/bundle/msi/playSong_0.2.0_x64_en-US.msi   — 2.62 MB
+src-tauri/target/release/bundle/nsis/playSong_0.2.0_x64-setup.exe  — 1.82 MB
 ```
 
 ## Legacy Python (reference-only)

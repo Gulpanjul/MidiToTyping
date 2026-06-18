@@ -45,11 +45,12 @@ function stripPrefix(s: string): string {
   return s.replace(/^[\+\-−×✕▶⏸🎵←]\s*/, '').trim();
 }
 
-const HOTKEY_CHIPS = [
-  { key: 'DEL', id: 'Play / Jeda', en: 'Play / Pause' },
-  { key: 'HOME', id: '−10', en: '−10' },
-  { key: 'END', id: '+10', en: '+10' },
-  { key: 'INS', id: 'Restart', en: 'Restart' },
+type ChipLabelKey = 'chip_play_pause' | 'chip_restart';
+const HOTKEY_CHIPS: { key: string; labelKey?: ChipLabelKey; label?: string }[] = [
+  { key: 'DEL', labelKey: 'chip_play_pause' },
+  { key: 'HOME', label: '−10' },
+  { key: 'END', label: '+10' },
+  { key: 'INS', labelKey: 'chip_restart' },
 ];
 
 export function PlayerSheet({ open, onClose, songName }: Props) {
@@ -57,7 +58,6 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
   const state = usePlaybackState();
   const { toggle, seek, restart, setSpeed } = usePlaybackActions();
   const S = STRINGS[config.lang];
-  const lang = config.lang;
   // Log lines live in a mutable ref so press/release events run in O(1) without
   // queueing a setState per tick. Re-renders are coalesced to one per animation
   // frame via `logTick`, so dense MIDIs (50+ notes/sec) no longer back up the
@@ -178,13 +178,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--subtext)]">
-              {state.is_playing
-                ? lang === 'id'
-                  ? 'Sedang Dimainkan'
-                  : 'Now Playing'
-                : lang === 'id'
-                  ? 'Siap Dimainkan'
-                  : 'Ready to Play'}
+              {state.is_playing ? S.np_playing : S.np_ready}
             </div>
             <MarqueeText
               text={songName || '—'}
@@ -261,7 +255,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
         <div>
           <div className="flex items-center gap-1.5 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--subtext)]">
             <Activity size={11} />
-            {lang === 'id' ? 'Log Note' : 'Note Log'}
+            {S.note_log}
           </div>
           <div
             ref={logRef}
@@ -269,13 +263,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
           >
             {linesRef.current.length === 0 ? (
               <div className="text-[var(--subtext)] italic">
-                {state.is_playing
-                  ? lang === 'id'
-                    ? 'Menunggu nada…'
-                    : 'Waiting for notes…'
-                  : lang === 'id'
-                    ? 'Tekan Mainkan atau hotkey DELETE untuk mulai'
-                    : 'Press Play or DELETE hotkey to start'}
+                {state.is_playing ? S.log_waiting : S.log_idle_hint}
               </div>
             ) : (
               linesRef.current.map((line, i) => {
@@ -309,7 +297,7 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
               <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-semibold rounded bg-[var(--bg)] border border-[var(--border)] text-[var(--text)]">
                 {h.key}
               </kbd>
-              <span className="text-[var(--subtext)]">{lang === 'id' ? h.id : h.en}</span>
+              <span className="text-[var(--subtext)]">{h.labelKey ? S[h.labelKey] : h.label}</span>
             </div>
           ))}
         </div>
@@ -338,8 +326,8 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             variant="secondary"
             size="md"
             onClick={() => seek(-10)}
-            aria-label={lang === 'id' ? 'Mundur 10 nada (HOME)' : 'Rewind 10 notes (HOME)'}
-            title={lang === 'id' ? 'Mundur 10 nada (HOME)' : 'Rewind 10 notes (HOME)'}
+            aria-label={S.aria_rewind}
+            title={S.aria_rewind}
             className="gap-1.5 px-3"
           >
             <Rewind size={14} fill="currentColor" />
@@ -349,8 +337,8 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             variant="secondary"
             size="md"
             onClick={() => seek(10)}
-            aria-label={lang === 'id' ? 'Maju 10 nada (END)' : 'Skip 10 notes (END)'}
-            title={lang === 'id' ? 'Maju 10 nada (END)' : 'Skip 10 notes (END)'}
+            aria-label={S.aria_skip}
+            title={S.aria_skip}
             className="gap-1.5 px-3"
           >
             <span className="font-mono text-[11px]">+10</span>
@@ -360,8 +348,8 @@ export function PlayerSheet({ open, onClose, songName }: Props) {
             variant="secondary"
             size="md"
             onClick={() => restart()}
-            aria-label={lang === 'id' ? 'Mulai ulang (INSERT)' : 'Restart (INSERT)'}
-            title={lang === 'id' ? 'Mulai ulang (INSERT)' : 'Restart (INSERT)'}
+            aria-label={S.aria_restart}
+            title={S.aria_restart}
             className="gap-1.5 px-3"
           >
             <RotateCcw size={14} />

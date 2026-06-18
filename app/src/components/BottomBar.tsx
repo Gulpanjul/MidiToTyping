@@ -29,7 +29,7 @@ export function BottomBar({ selectedFile, onPlay }: Props) {
           </>
         ) : (
           <span className="italic opacity-70">
-            {config.lang === 'id' ? 'Belum ada lagu dipilih' : 'No song selected'}
+            {S.no_song_selected}
           </span>
         )}
       </div>

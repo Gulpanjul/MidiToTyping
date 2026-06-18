@@ -118,7 +118,7 @@ export function MusicPane({ folder, selectedFile, onSelectFile, onPlayFile, disa
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--subtext)] pointer-events-none"
           />
           <Input
-            placeholder={config.lang === 'id' ? 'Cari lagu…' : 'Search songs…'}
+            placeholder={S.search_placeholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-8 w-full"
@@ -133,13 +133,7 @@ export function MusicPane({ folder, selectedFile, onSelectFile, onPlayFile, disa
           <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
             <FileMusic size={32} className="text-[var(--subtext)] opacity-40 mb-2" />
             <p className="text-xs text-[var(--subtext)]">
-              {debounced
-                ? config.lang === 'id'
-                  ? 'Tidak ada lagu yang cocok'
-                  : 'No matching songs'
-                : config.lang === 'id'
-                  ? 'Folder kosong'
-                  : 'Folder empty'}
+              {debounced ? S.no_match : S.folder_empty}
             </p>
           </div>
         ) : (
@@ -161,6 +155,8 @@ export function MusicPane({ folder, selectedFile, onSelectFile, onPlayFile, disa
                       if (el) rowRefs.current.set(f.path, el);
                       else rowRefs.current.delete(f.path);
                     }}
+                    aria-selected={active}
+                    tabIndex={-1}
                     onClick={() => onSelectFile(f)}
                     onDoubleClick={() => onPlayFile(f)}
                     className={`cursor-pointer transition-colors ${
